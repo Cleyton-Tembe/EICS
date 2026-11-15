@@ -170,8 +170,8 @@ export function VideoCard({
       <div
         className={`absolute inset-x-0 ${
           immersive
-            ? "bottom-0 top-28 md:top-16"
-            : "top-28 h-[44svh] md:inset-0 md:top-16 md:h-auto"
+            ? "bottom-0 top-16"
+            : "top-16 h-[48svh] md:inset-0 md:top-16 md:h-auto"
         } ${canScrub ? (scrubbing ? "cursor-grabbing" : "cursor-grab") : ""}`}
         style={canScrub ? { touchAction: "pan-y" } : undefined}
         onPointerDown={onPointerDown}
