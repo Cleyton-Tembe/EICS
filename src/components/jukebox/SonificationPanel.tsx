@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 import type { FrameFeatures, MusicState } from "@/lib/sonification";
 import { intensityLabel, type IntensityLabel } from "@/lib/phenomena";
 
@@ -17,9 +18,11 @@ export interface HudState {
 }
 
 interface Props {
+  id?: string;
   hud: HudState | null;
   soundOn: boolean;
   analyser: AnalyserNode | null;
+  onClose?: () => void;
 }
 
 function Meter({ label, hint, value }: { label: string; hint: string; value: number }) {
@@ -47,9 +50,7 @@ function Spectrum({ analyser, soundOn }: { analyser: AnalyserNode | null; soundO
     if (!canvas || !analyser || !soundOn) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const styles = getComputedStyle(canvas);
-    const c1 = styles.getPropertyValue("--primary").trim();
-    const c2 = styles.getPropertyValue("--accent").trim();
+    const color = getComputedStyle(canvas).getPropertyValue("--primary").trim() || "#5b8def";
     const data = new Uint8Array(analyser.frequencyBinCount);
     let raf = 0;
     const draw = () => {
@@ -59,10 +60,7 @@ function Spectrum({ analyser, soundOn }: { analyser: AnalyserNode | null; soundO
       ctx.clearRect(0, 0, width, height);
       const bars = 40;
       const bw = width / bars;
-      const grad = ctx.createLinearGradient(0, 0, width, 0);
-      grad.addColorStop(0, c1);
-      grad.addColorStop(1, c2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = color;
       for (let i = 0; i < bars; i++) {
         const v = (data[Math.floor((i / bars) * data.length * 0.7)] ?? 0) / 255;
         const h = Math.max(2, v * height);
@@ -122,24 +120,33 @@ function PhenomenonMeter({ phenomenon }: { phenomenon: HudState["phenomenon"] })
   );
 }
 
-export function SonificationPanel({ hud, soundOn, analyser }: Props) {
+export function SonificationPanel({ id, hud, soundOn, analyser, onClose }: Props) {
   const f = hud?.features;
   const m = hud?.music;
 
   return (
-    <aside
-      aria-label="Sonificação ao vivo"
-      className="glass shadow-panel w-full rounded-2xl p-4 md:w-72"
-    >
-      <div className="flex items-center justify-between">
-        <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+    <aside id={id} aria-label="Sonificação ao vivo" className="glass w-full rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+          <span className="relative flex h-2 w-2">
+            {soundOn && <span className="absolute inline-flex h-full w-full rounded-full bg-accent animate-pulse-ring" />}
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${soundOn ? "bg-accent" : "bg-muted-foreground"}`} />
+          </span>
           Sonificação ao vivo
         </p>
-        <span className="relative flex h-2 w-2">
-          {soundOn && <span className="absolute inline-flex h-full w-full rounded-full bg-primary animate-pulse-ring" />}
-          <span className={`relative inline-flex h-2 w-2 rounded-full ${soundOn ? "bg-primary" : "bg-muted-foreground"}`} />
-        </span>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar sonificação"
+            className="rounded-full p-1 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        )}
       </div>
+
+      {hud && <PhenomenonMeter phenomenon={hud.phenomenon} />}
 
       <div className="mt-3 flex items-end justify-between gap-3">
         <div>
@@ -160,10 +167,8 @@ export function SonificationPanel({ hud, soundOn, analyser }: Props) {
         )}
       </div>
 
-      {hud && <PhenomenonMeter phenomenon={hud.phenomenon} />}
-
       {f && (
-        <dl className="mt-3 hidden space-y-2.5 md:block">
+        <dl className="mt-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <dt className="text-xs font-semibold text-foreground">Cor dominante</dt>
             <dd className="flex items-center gap-2 font-mono text-[0.65rem] text-muted-foreground">

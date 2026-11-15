@@ -45,6 +45,8 @@ export interface Visualization {
   category: CategoryId;
   title: string;
   description: string;
+  /** What the changes in the video mean, in plain words (shown in "Descrição"). */
+  meaning: string;
   /** Longer description for screen readers. */
   altText: string;
   videoPath: string;
@@ -66,7 +68,7 @@ const v = (
   videoPath: string,
   posterPath: string,
   phenomenon: PhenomenonSpec,
-  extra: { worldview: WorldviewLink; timeline?: Timeline },
+  extra: { meaning: string; worldview: WorldviewLink; timeline?: Timeline },
 ): Visualization => ({
   id: `svs-${svsId}`,
   svsId,
@@ -98,6 +100,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "nuvens e chuva intensa (vermelho e amarelo no radar)",
     },
     {
+      meaning:
+        "As cores do radar mostram onde chove com mais força: vermelho é chuva intensa. Quanto mais fechada e vermelha a espiral, mais energia o furacão tira do oceano quente — e oceanos mais quentes alimentam furacões mais fortes.",
       worldview: {
         layers: [
           "IMERG_Precipitation_Rate",
@@ -128,6 +132,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "área do buraco do ozono (azul e roxo)",
     },
     {
+      meaning:
+        "Azul e roxo marcam onde há pouco ozono, a camada que nos protege da radiação ultravioleta. O buraco cresceu com os gases CFC e deixou de crescer depois de o Protocolo de Montreal (1987) os proibir.",
       worldview: {
         layers: [
           "OMPS_Ozone_Total_Column",
@@ -157,6 +163,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "densidade das plumas de CO₂ (laranja e amarelo)",
     },
     {
+      meaning:
+        "As plumas laranja e amarelas são CO₂ libertado sobretudo pela queima de combustíveis fósseis e por incêndios, levado pelo vento. É o principal gás que está a aquecer o planeta.",
       worldview: {
         layers: [
           "OCO-2_Carbon_Dioxide_Total_Column_Average",
@@ -185,6 +193,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "parte quente da curva (amarelo e vermelho)",
     },
     {
+      meaning:
+        "Cada curva mostra quantas zonas de terra tiveram um ano mais frio (azul) ou mais quente (vermelho) do que o normal. A curva desliza para a direita: o calor que antes era raro é hoje comum.",
       worldview: {
         layers: ["MERRA2_2m_Air_Temperature_Monthly", "Coastlines_15m"],
         date: "2025-07-01",
@@ -211,6 +221,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "brilho das correntes em movimento",
     },
     {
+      meaning:
+        "As linhas são correntes calculadas a partir de dados reais. A Corrente do Golfo leva água quente para norte e ajuda a regular o clima da América do Norte e da Europa; os redemoinhos misturam calor e nutrientes.",
       worldview: {
         layers: [
           "GHRSST_L4_MUR_Sea_Surface_Temperature",
@@ -239,6 +251,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "quantidade de sargaço no mar",
     },
     {
+      meaning:
+        "Cada quadrado colorido é sargaço visto por satélite; vermelho é mais denso. Desde 2011 estas algas multiplicaram-se com mais nutrientes e água quente, e chegam em massa às praias das Caraíbas e de África.",
       worldview: {
         layers: ["MODIS_Aqua_CorrectedReflectance_TrueColor", "Coastlines_15m"],
         date: "2023-07-15",
@@ -265,6 +279,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "perda de verde no Pacífico equatorial de 2026 face a 2025",
     },
     {
+      meaning:
+        "A cor mostra a vida no mar: verde e amarelo indicam mais fitoplâncton. Com o El Niño, a água fria e rica em nutrientes deixa de subir no Pacífico equatorial e a faixa verde enfraquece em 2026 face a 2025.",
       worldview: {
         layers: [
           "GHRSST_L4_MUR25_Sea_Surface_Temperature_Anomalies",
@@ -295,6 +311,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "intensidade da floração de algas",
     },
     {
+      meaning:
+        "As manchas laranja e vermelhas são uma floração de algas nocivas detetada pelo satélite PACE. Água mais quente favorece estas florações, que podem matar peixes e afetar a pesca.",
       worldview: {
         layers: ["OCI_PACE_Chlorophyll_a", "OCI_PACE_True_Color", "Coastlines_15m"],
         date: "2025-05-05",
@@ -321,6 +339,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "perda de massa de gelo (laranja a vermelho escuro)",
     },
     {
+      meaning:
+        "Laranja e vermelho mostram onde o manto de gelo perdeu massa desde 2002. A Gronelândia perde em média 264 mil milhões de toneladas de gelo por ano, e essa água faz subir o nível do mar.",
       worldview: {
         layers: [
           "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
@@ -350,6 +370,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "perda de massa de gelo (laranja a vermelho escuro)",
     },
     {
+      meaning:
+        "Vermelho é gelo perdido, azul é gelo ganho. As costas da Gronelândia e da Antártida Ocidental perdem gelo cada vez mais depressa — juntas, são uma das maiores causas da subida do mar.",
       worldview: {
         layers: [
           "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
@@ -379,6 +401,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "gelo que perdeu altura (vermelho)",
     },
     {
+      meaning:
+        "Vermelho mostra onde a superfície do gelo baixou desde 2020, medida por um laser a partir do espaço. Ano após ano, o gelo destas ilhas árticas fica mais fino.",
       worldview: {
         layers: [
           "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
@@ -411,6 +435,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "recuo do gelo do glaciar (azul-claro)",
     },
     {
+      meaning:
+        "Em falsa cor, o gelo aparece azul-claro e a vegetação verde. O glaciar recuou cerca de 1,6 km desde 1986 e as plantas ocupam o vale que o gelo deixou livre.",
       worldview: {
         layers: ["HLS_False_Color_Landsat", "MODIS_Terra_CorrectedReflectance_TrueColor"],
         date: "2024-08-06",
@@ -437,6 +463,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "área de campos cultivados (círculos vermelhos)",
     },
     {
+      meaning:
+        "Em falsa cor, as culturas aparecem vermelhas. Os círculos são campos regados com água subterrânea muito antiga: acendem-se quando as plantas crescem e apagam-se com a colheita.",
       worldview: {
         layers: ["HLS_False_Color_Landsat", "MODIS_Terra_CorrectedReflectance_TrueColor"],
         date: "2024-03-15",
@@ -462,6 +490,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "área de água no lago (verde-azulado)",
     },
     {
+      meaning:
+        "O lago está quase sempre seco. Depois de tempestades tropicais enche-se de água (verde-azulada) e volta a secar em poucos meses — a chuva extrema transforma o deserto.",
       worldview: {
         layers: [
           "HLS_L30_Nadir_BRDF_Adjusted_Reflectance",
@@ -490,6 +520,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "brilho das luzes das cidades",
     },
     {
+      meaning:
+        "Dourado mostra onde as luzes da noite ficaram mais fortes entre 2014 e 2022 (cidades novas, mais eletricidade); roxo, onde enfraqueceram (crises, conflitos ou mudança para iluminação LED).",
       worldview: {
         layers: ["VIIRS_SNPP_DayNightBand_At_Sensor_Radiance", "Coastlines_15m"],
         date: "2022-12-15",
@@ -516,6 +548,8 @@ export const VISUALIZATIONS: Visualization[] = [
       measures: "esvaziamento das albufeiras",
     },
     {
+      meaning:
+        "O azul escuro das albufeiras desaparece quando as barragens caem e o rio volta a correr livre. A terra exposta volta a ficar verde e os salmões podem voltar a subir o rio.",
       worldview: {
         layers: [
           "HLS_L30_Nadir_BRDF_Adjusted_Reflectance",

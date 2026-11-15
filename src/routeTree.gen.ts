@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ApiPublicSvsRouteImport } from './routes/api/public/svs'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreRoute = SobreRouteImport.update({
+  id: '/sobre',
+  path: '/sobre',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSvsRoute = ApiPublicSvsRouteImport.update({
@@ -25,27 +31,31 @@ const ApiPublicSvsRoute = ApiPublicSvsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sobre': typeof SobreRoute
   '/api/public/svs': typeof ApiPublicSvsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sobre': typeof SobreRoute
   '/api/public/svs': typeof ApiPublicSvsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sobre': typeof SobreRoute
   '/api/public/svs': typeof ApiPublicSvsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/svs'
+  fullPaths: '/' | '/sobre' | '/api/public/svs'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/svs'
-  id: '__root__' | '/' | '/api/public/svs'
+  to: '/' | '/sobre' | '/api/public/svs'
+  id: '__root__' | '/' | '/sobre' | '/api/public/svs'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SobreRoute: typeof SobreRoute
   ApiPublicSvsRoute: typeof ApiPublicSvsRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre': {
+      id: '/sobre'
+      path: '/sobre'
+      fullPath: '/sobre'
+      preLoaderRoute: typeof SobreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/svs': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SobreRoute: SobreRoute,
   ApiPublicSvsRoute: ApiPublicSvsRoute,
 }
 export const routeTree = rootRouteImport

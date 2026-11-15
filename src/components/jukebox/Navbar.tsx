@@ -1,4 +1,5 @@
-import { Maximize2, Minimize2, Orbit, Volume2, VolumeX } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Info, Maximize2, Minimize2, Orbit, Volume2, VolumeX } from "lucide-react";
 import { CATEGORIES, type CategoryId } from "@/lib/visualizations";
 import { CategoryIcon } from "./CategoryIcon";
 
@@ -76,13 +77,22 @@ export function Navbar({
           ))}
         </div>
 
+        <Link
+          to="/sobre"
+          aria-label="Sobre: como funciona"
+          className="ml-auto flex items-center gap-2 rounded-full border border-border bg-glass px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary md:ml-0"
+        >
+          <Info className="h-4 w-4 text-muted-foreground" aria-hidden />
+          <span className="hidden lg:inline">Sobre</span>
+        </Link>
+
         <button
           type="button"
           onClick={onToggleImmersive}
           aria-pressed={immersive}
           aria-label={immersive ? "Sair do ecrã inteiro" : "Ecrã inteiro: só o vídeo"}
           title={immersive ? "Sair do ecrã inteiro (F)" : "Ecrã inteiro (F)"}
-          className="ml-auto flex items-center gap-2 rounded-full border border-border bg-glass px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary md:ml-0"
+          className="flex items-center gap-2 rounded-full border border-border bg-glass px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary"
         >
           {immersive ? (
             <Minimize2 className="h-4 w-4 text-primary" aria-hidden />
