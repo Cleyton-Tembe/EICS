@@ -52,6 +52,7 @@ function Index() {
   const [soundOn, setSoundOn] = useState(false);
   const [hud, setHud] = useState<HudState | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [immersive, setImmersive] = useState(false);
   const audioRef = useRef<JukeboxAudio | null>(null);
   const videoEls = useRef(new Map<string, HTMLVideoElement>());
 
@@ -94,7 +95,7 @@ function Index() {
     );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
-  }, [list]);
+  }, [list, immersive]);
 
   // Announce the playing visualization for screen readers.
   useEffect(() => {
@@ -221,7 +222,46 @@ function Index() {
     scrollToFirst();
   };
 
-  // Keyboard: ↓/J next, ↑/K previous, M sound.
+  // Full screen: only the video and the navbar stay. Uses the browser's full-screen mode when
+  // allowed (not on iPhone or inside some iframes); the layout works without it too.
+  const toggleImmersive = useCallback(() => {
+    const next = !immersive;
+    setImmersive(next);
+    const doc = document;
+    if (next && !doc.fullscreenElement) {
+      doc.documentElement.requestFullscreen?.().catch(() => undefined);
+    } else if (!next && doc.fullscreenElement) {
+      doc.exitFullscreen?.().catch(() => undefined);
+    }
+  }, [immersive]);
+
+  useEffect(() => {
+    const onChange = () => {
+      if (!document.fullscreenElement) setImmersive(false);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  // Keep the video in view when the layout changes; from the start screen, go to the first video.
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      const el = activeId
+        ? document.querySelector(`[data-vid="${activeId}"]`)
+        : immersive
+          ? document.querySelector("[data-vid]")
+          : null;
+      el?.scrollIntoView({ behavior: "instant" as ScrollBehavior });
+    });
+    // Only when the mode changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [immersive]);
+
+  useEffect(() => {
+    setAnnouncement(immersive ? "Ecrã inteiro: só o vídeo e a navegação." : "");
+  }, [immersive]);
+
+  // Keyboard: ↓/J next, ↑/K previous, ←/→ back and forward in time, M sound, F full screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -237,11 +277,21 @@ function Index() {
         sections[Math.max(current - 1, 0)]?.scrollIntoView({ behavior: "smooth" });
       } else if (e.key === "m") {
         toggleSound();
+      } else if (e.key === "f") {
+        toggleImmersive();
+      } else if (e.key === "Escape" && immersive && !document.fullscreenElement) {
+        setImmersive(false);
+      } else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && activeViz?.timeline) {
+        const v = videoEls.current.get(activeViz.id);
+        if (!v || !Number.isFinite(v.duration)) return;
+        e.preventDefault();
+        const step = v.duration * 0.05 * (e.key === "ArrowRight" ? 1 : -1);
+        v.currentTime = Math.min(v.duration - 0.05, Math.max(0, v.currentTime + step));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeId, toggleSound]);
+  }, [activeId, activeViz, immersive, toggleSound, toggleImmersive]);
 
   const registerVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
     if (el) videoEls.current.set(id, el);
@@ -257,11 +307,15 @@ function Index() {
         soundOn={soundOn}
         onFilter={handleFilter}
         onToggleSound={toggleSound}
+        immersive={immersive}
+        onToggleImmersive={toggleImmersive}
         onHome={() => document.getElementById("inicio")?.scrollIntoView({ behavior: "smooth" })}
       />
 
       <main className="relative z-10">
-        <Hero onStart={start} />
+        <div hidden={immersive}>
+          <Hero onStart={start} />
+        </div>
 
         <div id="feed" aria-label="Visualizações">
           {list.map((viz, i) => (
@@ -277,12 +331,14 @@ function Index() {
               analyser={audioRef.current?.analyser ?? null}
               onEnableSound={() => void enableSound()}
               registerVideo={registerVideo}
+              immersive={immersive}
             />
           ))}
         </div>
 
         <section
           id="fim"
+          hidden={immersive}
           aria-labelledby="fim-title"
           className="relative flex h-svh snap-start flex-col items-center justify-center px-5 text-center"
         >
@@ -312,7 +368,8 @@ function Index() {
             </button>
           </div>
           <p className="mt-10 max-w-md text-xs text-muted-foreground">
-            Teclado: ↓ / ↑ para mudar de vídeo · M para ligar ou desligar o som.
+            Teclado: ↓ / ↑ para mudar de vídeo · ← / → para recuar ou avançar no tempo · M para ligar ou
+            desligar o som · F para ecrã inteiro.
           </p>
         </section>
       </main>

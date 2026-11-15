@@ -8,6 +8,7 @@ import {
   phenomenonLevel,
   smoothLevel,
 } from "@/lib/phenomena";
+import { scrubPosition, timelineLabel, worldviewUrl } from "@/lib/worldview";
 
 const base: FrameFeatures = {
   brightness: 0.4,
@@ -139,5 +140,41 @@ describe("phenomenon sound is in sync with the level", () => {
     const s = mapPhenomenonSound("furacao", 0.8);
     expect(s.bed.swellDepth).toBeGreaterThan(0.3); // gusts
     expect(s.events.map((e) => e.grain)).toContain("pingo"); // rain
+  });
+});
+
+describe("NASA Worldview links", () => {
+  it("opens the matching layers, date and region", () => {
+    const url = new URL(
+      worldviewUrl({
+        layers: ["IMERG_Precipitation_Rate", "Coastlines_15m"],
+        date: "2025-08-17",
+        view: [-75, 10, -50, 30],
+        what: "chuva",
+      }),
+    );
+    expect(url.origin).toBe("https://worldview.earthdata.nasa.gov");
+    expect(url.searchParams.get("l")).toBe("IMERG_Precipitation_Rate,Coastlines_15m");
+    expect(url.searchParams.get("t")).toBe("2025-08-17-T12:00:00Z");
+    expect(url.searchParams.get("v")).toBe("-75,10,-50,30");
+  });
+  it("every visualization links to Worldview with a valid date", () => {
+    for (const v of VISUALIZATIONS) {
+      expect(v.worldview.layers.length).toBeGreaterThan(0);
+      expect(v.worldview.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+});
+
+describe("timeline scrubbing", () => {
+  it("dragging across the whole video goes from start to end, and is clamped", () => {
+    expect(scrubPosition(0.5, 100, 400)).toBeCloseTo(0.75);
+    expect(scrubPosition(0.5, -1000, 400)).toBe(0);
+    expect(scrubPosition(0.9, 400, 400)).toBe(1);
+  });
+  it("labels the year shown at that point of the video", () => {
+    expect(timelineLabel({ from: "2002", to: "2025" }, 0)).toBe("≈ 2002");
+    expect(timelineLabel({ from: "2002", to: "2025" }, 1)).toBe("≈ 2025");
+    expect(timelineLabel({ from: "mar", to: "nov" }, 0.5)).toBe("50% · mar → nov");
   });
 });

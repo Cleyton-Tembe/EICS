@@ -1,5 +1,6 @@
 import { svsAssetUrl } from "./svs";
 import type { PhenomenonSpec } from "./phenomena";
+import type { Timeline, WorldviewLink } from "./worldview";
 
 export type CategoryId = "atmosfera" | "oceanos" | "gelo" | "terra";
 
@@ -50,6 +51,10 @@ export interface Visualization {
   poster: string;
   /** How the phenomenon is measured in each frame and which natural sound plays it. */
   phenomenon: PhenomenonSpec;
+  /** The same phenomenon in NASA Worldview, with the matching data layer. */
+  worldview: WorldviewLink;
+  /** Period shown; when present the user can drag to move forward and back in time. */
+  timeline?: Timeline;
 }
 
 const v = (
@@ -61,6 +66,7 @@ const v = (
   videoPath: string,
   posterPath: string,
   phenomenon: PhenomenonSpec,
+  extra: { worldview: WorldviewLink; timeline?: Timeline },
 ): Visualization => ({
   id: `svs-${svsId}`,
   svsId,
@@ -71,6 +77,7 @@ const v = (
   videoPath,
   poster: svsAssetUrl(posterPath),
   phenomenon,
+  ...extra,
 });
 
 export const VISUALIZATIONS: Visualization[] = [
@@ -90,6 +97,19 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Vento e chuva do furacão",
       measures: "nuvens e chuva intensa (vermelho e amarelo no radar)",
     },
+    {
+      worldview: {
+        layers: [
+          "IMERG_Precipitation_Rate",
+          "Coastlines_15m",
+          "VIIRS_SNPP_CorrectedReflectance_TrueColor",
+        ],
+        date: "2025-08-17",
+        view: [-75, 10, -50, 30],
+        what: "chuva do Erin medida por satélite (IMERG)",
+      },
+      timeline: { from: "16 ago 2025", to: "19 ago 2025" },
+    },
   ),
   v(
     31392,
@@ -107,6 +127,19 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Vento gelado da estratosfera",
       measures: "área do buraco do ozono (azul e roxo)",
     },
+    {
+      worldview: {
+        layers: [
+          "OMPS_Ozone_Total_Column",
+          "Coastlines_15m",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2025-09-09",
+        view: [-180, -90, 180, -35],
+        what: "ozono total sobre a Antártida (OMPS)",
+      },
+      timeline: { from: "1979", to: "2025" },
+    },
   ),
   v(
     5196,
@@ -123,6 +156,18 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Sopro de gases e fumo",
       measures: "densidade das plumas de CO₂ (laranja e amarelo)",
     },
+    {
+      worldview: {
+        layers: [
+          "OCO-2_Carbon_Dioxide_Total_Column_Average",
+          "Coastlines_15m",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2020-02-15",
+        view: [-180, -60, 180, 80],
+        what: "CO₂ medido pelo satélite OCO-2",
+      },
+    },
   ),
   v(
     5613,
@@ -138,6 +183,15 @@ export const VISUALIZATIONS: Visualization[] = [
       range: [0.277, 0.746],
       sound: "Crepitar do calor",
       measures: "parte quente da curva (amarelo e vermelho)",
+    },
+    {
+      worldview: {
+        layers: ["MERRA2_2m_Air_Temperature_Monthly", "Coastlines_15m"],
+        date: "2025-07-01",
+        view: [-180, -90, 180, 90],
+        what: "temperatura do ar à superfície (MERRA-2)",
+      },
+      timeline: { from: "1954", to: "2025" },
     },
   ),
   // Oceanos
@@ -156,6 +210,18 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Água a correr e ondas",
       measures: "brilho das correntes em movimento",
     },
+    {
+      worldview: {
+        layers: [
+          "GHRSST_L4_MUR_Sea_Surface_Temperature",
+          "Coastlines_15m",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2025-06-01",
+        view: [-85, 22, -50, 46],
+        what: "temperatura do mar: a Corrente do Golfo (MUR)",
+      },
+    },
   ),
   v(
     5298,
@@ -171,6 +237,15 @@ export const VISUALIZATIONS: Visualization[] = [
       range: [0.0024, 0.011],
       sound: "Ondas a bater nas algas",
       measures: "quantidade de sargaço no mar",
+    },
+    {
+      worldview: {
+        layers: ["MODIS_Aqua_CorrectedReflectance_TrueColor", "Coastlines_15m"],
+        date: "2023-07-15",
+        view: [-90, 0, -15, 32],
+        what: "imagens de satélite do Atlântico tropical (MODIS)",
+      },
+      timeline: { from: "2010", to: "2023" },
     },
   ),
   v(
@@ -189,6 +264,19 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Ondulação e chuva do El Niño",
       measures: "perda de verde no Pacífico equatorial de 2026 face a 2025",
     },
+    {
+      worldview: {
+        layers: [
+          "GHRSST_L4_MUR25_Sea_Surface_Temperature_Anomalies",
+          "OCI_PACE_Chlorophyll_a(hidden)",
+          "Coastlines_15m",
+        ],
+        date: "2026-10-01",
+        view: [-180, -35, -70, 35],
+        what: "anomalia de temperatura do Pacífico e clorofila PACE",
+      },
+      timeline: { from: "mar", to: "nov" },
+    },
   ),
   v(
     5599,
@@ -205,6 +293,15 @@ export const VISUALIZATIONS: Visualization[] = [
       range: [0, 0.0019],
       sound: "Bolhas de vida microscópica",
       measures: "intensidade da floração de algas",
+    },
+    {
+      worldview: {
+        layers: ["OCI_PACE_Chlorophyll_a", "OCI_PACE_True_Color", "Coastlines_15m"],
+        date: "2025-05-05",
+        view: [134.5, -37.5, 140.5, -33.5],
+        what: "clorofila medida pela missão PACE",
+      },
+      timeline: { from: "mar 2025", to: "jun 2025" },
     },
   ),
   // Gelo
@@ -223,6 +320,19 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Gelo a estalar e água a pingar",
       measures: "perda de massa de gelo (laranja a vermelho escuro)",
     },
+    {
+      worldview: {
+        layers: [
+          "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
+          "Coastlines_15m",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2022-07-01",
+        view: [-80, 57, -5, 85],
+        what: "variação de massa medida pelo GRACE-FO",
+      },
+      timeline: { from: "2002", to: "2025" },
+    },
   ),
   v(
     31166,
@@ -239,6 +349,19 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Gelo a estalar e água a pingar",
       measures: "perda de massa de gelo (laranja a vermelho escuro)",
     },
+    {
+      worldview: {
+        layers: [
+          "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
+          "Coastlines_15m",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2022-07-01",
+        view: [-180, -90, 180, 90],
+        what: "variação de massa medida pelo GRACE-FO",
+      },
+      timeline: { from: "2002", to: "2025" },
+    },
   ),
   v(
     5591,
@@ -254,6 +377,19 @@ export const VISUALIZATIONS: Visualization[] = [
       range: [0, 0.0134],
       sound: "Gelo a estalar e água a pingar",
       measures: "gelo que perdeu altura (vermelho)",
+    },
+    {
+      worldview: {
+        layers: [
+          "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
+          "Coastlines_15m",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2022-07-01",
+        view: [5, 74, 70, 82],
+        what: "perda de massa de gelo no Ártico medida pelo GRACE-FO",
+      },
+      timeline: { from: "2020", to: "2025" },
     },
   ),
   v(
@@ -274,6 +410,15 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Gelo a estalar e água a pingar",
       measures: "recuo do gelo do glaciar (azul-claro)",
     },
+    {
+      worldview: {
+        layers: ["HLS_False_Color_Landsat", "MODIS_Terra_CorrectedReflectance_TrueColor"],
+        date: "2024-08-06",
+        view: [-134.8, 58.3, -134.3, 58.65],
+        what: "o glaciar em falsa cor (Landsat HLS)",
+      },
+      timeline: { from: "1986", to: "2024" },
+    },
   ),
   // Terra
   v(
@@ -291,6 +436,15 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Aspersores de rega",
       measures: "área de campos cultivados (círculos vermelhos)",
     },
+    {
+      worldview: {
+        layers: ["HLS_False_Color_Landsat", "MODIS_Terra_CorrectedReflectance_TrueColor"],
+        date: "2024-03-15",
+        view: [37.3, 29.4, 39.3, 31.0],
+        what: "campos de cultivo em falsa cor (Landsat HLS)",
+      },
+      timeline: { from: "jan 2024", to: "jan 2025" },
+    },
   ),
   v(
     15022,
@@ -307,6 +461,18 @@ export const VISUALIZATIONS: Visualization[] = [
       sound: "Chuva e água a encher o lago",
       measures: "área de água no lago (verde-azulado)",
     },
+    {
+      worldview: {
+        layers: [
+          "HLS_L30_Nadir_BRDF_Adjusted_Reflectance",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2020-06-14",
+        view: [121.5, -26.9, 123.7, -25.6],
+        what: "o lago visto por satélite (Landsat HLS e MODIS)",
+      },
+      timeline: { from: "2019", to: "2021" },
+    },
   ),
   v(
     5634,
@@ -322,6 +488,14 @@ export const VISUALIZATIONS: Visualization[] = [
       range: [0, 0.0019],
       sound: "Zumbido e trânsito das cidades",
       measures: "brilho das luzes das cidades",
+    },
+    {
+      worldview: {
+        layers: ["VIIRS_SNPP_DayNightBand_At_Sensor_Radiance", "Coastlines_15m"],
+        date: "2022-12-15",
+        view: [-180, -60, 180, 75],
+        what: "luzes noturnas (VIIRS Black Marble)",
+      },
     },
   ),
   v(
@@ -340,6 +514,18 @@ export const VISUALIZATIONS: Visualization[] = [
       smoothing: 0.15,
       sound: "Rio a correr livre",
       measures: "esvaziamento das albufeiras",
+    },
+    {
+      worldview: {
+        layers: [
+          "HLS_L30_Nadir_BRDF_Adjusted_Reflectance",
+          "MODIS_Terra_CorrectedReflectance_TrueColor",
+        ],
+        date: "2024-08-27",
+        view: [-122.7, 41.8, -122.1, 42.15],
+        what: "o rio Klamath visto por satélite (Landsat HLS e MODIS)",
+      },
+      timeline: { from: "out 2023", to: "mar 2025" },
     },
   ),
 ];
