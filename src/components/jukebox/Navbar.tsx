@@ -1,4 +1,4 @@
-import { Orbit, Volume2, VolumeX } from "lucide-react";
+import { Maximize2, Minimize2, Orbit, Volume2, VolumeX } from "lucide-react";
 import { CATEGORIES, type CategoryId } from "@/lib/visualizations";
 import { CategoryIcon } from "./CategoryIcon";
 
@@ -10,10 +10,21 @@ interface NavbarProps {
   soundOn: boolean;
   onFilter: (f: Filter) => void;
   onToggleSound: () => void;
+  immersive: boolean;
+  onToggleImmersive: () => void;
   onHome: () => void;
 }
 
-export function Navbar({ filter, playingCategory, soundOn, onFilter, onToggleSound, onHome }: NavbarProps) {
+export function Navbar({
+  filter,
+  playingCategory,
+  soundOn,
+  onFilter,
+  onToggleSound,
+  immersive,
+  onToggleImmersive,
+  onHome,
+}: NavbarProps) {
   const items: { id: Filter; label: string }[] = [
     { id: "todas", label: "Todas" },
     ...CATEGORIES.map((c) => ({ id: c.id, label: c.label })),
@@ -67,16 +78,32 @@ export function Navbar({ filter, playingCategory, soundOn, onFilter, onToggleSou
 
         <button
           type="button"
+          onClick={onToggleImmersive}
+          aria-pressed={immersive}
+          aria-label={immersive ? "Sair do ecrã inteiro" : "Ecrã inteiro: só o vídeo"}
+          title={immersive ? "Sair do ecrã inteiro (F)" : "Ecrã inteiro (F)"}
+          className="ml-auto flex items-center gap-2 rounded-full border border-border bg-glass px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary md:ml-0"
+        >
+          {immersive ? (
+            <Minimize2 className="h-4 w-4 text-primary" aria-hidden />
+          ) : (
+            <Maximize2 className="h-4 w-4 text-muted-foreground" aria-hidden />
+          )}
+          <span className="hidden lg:inline">{immersive ? "Sair" : "Ecrã inteiro"}</span>
+        </button>
+
+        <button
+          type="button"
           onClick={onToggleSound}
           aria-pressed={soundOn}
-          className="ml-auto flex items-center gap-2 rounded-full border border-border bg-glass px-3.5 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary md:ml-0"
+          className="flex items-center gap-2 rounded-full border border-border bg-glass px-3.5 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary md:ml-0"
         >
           {soundOn ? (
             <Volume2 className="h-4 w-4 text-primary" aria-hidden />
           ) : (
             <VolumeX className="h-4 w-4 text-muted-foreground" aria-hidden />
           )}
-          <span>{soundOn ? "Som ligado" : "Ligar som"}</span>
+          <span className="sr-only sm:not-sr-only">{soundOn ? "Som ligado" : "Ligar som"}</span>
         </button>
       </nav>
     </header>
