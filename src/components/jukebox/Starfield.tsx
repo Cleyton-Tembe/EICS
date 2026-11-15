@@ -43,16 +43,16 @@ export function Starfield() {
     const resize = () => {
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
-      const count = Math.floor((window.innerWidth * window.innerHeight) / 3600);
+      const count = Math.floor((window.innerWidth * window.innerHeight) / 4200);
       stars = Array.from({ length: count }, () => {
         const big = Math.random() < 0.05;
         return {
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          r: (big ? 1.1 : 0.35 + Math.random() * 0.6) * dpr,
-          base: big ? 0.5 : 0.15 + Math.random() * 0.3,
+          r: (big ? 1.6 : 0.2 + Math.random() * 1.1) * dpr,
+          base: big ? 0.75 : 0.35 + Math.random() * 0.35,
           p: Math.random() * Math.PI * 2,
-          s: 0.15 + Math.random() * 0.5,
+          s: 0.4 + Math.random() * 1.6,
           c: pickColor(Math.random()),
         };
       });
@@ -65,7 +65,7 @@ export function Starfield() {
       last = t;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (const st of stars) {
-        const tw = reduce ? 0 : Math.sin(st.p + (t / 1000) * st.s) * 0.12;
+        const tw = reduce ? 0 : Math.sin(st.p + (t / 1000) * st.s * 0.6) * 0.3;
         ctx.globalAlpha = Math.max(0.05, st.base + tw);
         ctx.fillStyle = st.c;
         ctx.beginPath();
@@ -102,6 +102,7 @@ export function Starfield() {
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-void">
+      <div className="absolute inset-0 bg-nebula" />
       <canvas ref={ref} className="absolute inset-0 h-full w-full" />
     </div>
   );

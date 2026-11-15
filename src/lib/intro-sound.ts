@@ -138,51 +138,49 @@ export function scheduleIntro(
   return at + 9.5;
 }
 
-export type IntroState = "waiting" | "playing" | "done";
+export const INTRO_PLAYED_KEY = "earth-jukebox:intro-played";
 
 /**
- * Plays the intro once: right away if the browser allows sound, otherwise on the visitor's
- * first tap, click or key press. Returns a cleanup function.
+ * Plays the intro when the site opens, on the visitor's first visit only. It never waits for a
+ * click: if the browser does not allow sound on arrival (most do not on a first visit), it stays
+ * silent and tries again on the next visit. Returns a cleanup function.
  */
-export function armIntroSound(onState: (s: IntroState) => void): () => void {
+export function playIntroOnArrival(): () => void {
+  try {
+    if (window.localStorage.getItem(INTRO_PLAYED_KEY)) return () => undefined;
+  } catch {
+    /* storage blocked: still try once */
+  }
   const Ctx: typeof AudioContext | undefined =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctx) {
-    onState("done");
-    return () => undefined;
-  }
+  if (!Ctx) return () => undefined;
+
   const ctx = new Ctx();
-  let started = false;
-  let timer = 0;
-  const events = ["pointerdown", "keydown", "touchend"] as const;
-
-  const start = () => {
-    if (started || ctx.state !== "running") return;
-    started = true;
-    events.forEach((e) => window.removeEventListener(e, onGesture, true));
-    const end = scheduleIntro(ctx, ctx.destination);
-    onState("playing");
-    timer = window.setTimeout(
-      () => {
-        onState("done");
-        void ctx.close();
-      },
-      (end - ctx.currentTime) * 1000 + 300,
-    );
+  let closeTimer = 0;
+  const finish = () => {
+    if (ctx.state !== "closed") void ctx.close();
   };
-  function onGesture() {
-    void ctx.resume().then(start);
-  }
+  const start = () => {
+    if (ctx.state !== "running" || closeTimer) return;
+    const end = scheduleIntro(ctx, ctx.destination);
+    try {
+      window.localStorage.setItem(INTRO_PLAYED_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    closeTimer = window.setTimeout(finish, (end - ctx.currentTime) * 1000 + 300);
+  };
 
-  onState("waiting");
-  // Some browsers allow sound straight away (e.g. after earlier visits).
   void ctx.resume().then(start);
-  events.forEach((e) => window.addEventListener(e, onGesture, { capture: true, passive: true }));
+  // If sound is still blocked shortly after arrival, give up quietly (no click fallback).
+  const giveUp = window.setTimeout(() => {
+    if (!closeTimer) finish();
+  }, 1500);
 
   return () => {
-    events.forEach((e) => window.removeEventListener(e, onGesture, true));
-    window.clearTimeout(timer);
-    if (ctx.state !== "closed") void ctx.close();
+    window.clearTimeout(giveUp);
+    window.clearTimeout(closeTimer);
+    finish();
   };
 }

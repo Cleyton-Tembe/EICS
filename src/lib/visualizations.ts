@@ -4,12 +4,17 @@ import type { Timeline, WorldviewLink } from "./worldview";
 
 export type CategoryId = "atmosfera" | "oceanos" | "gelo" | "terra";
 
-export interface Category {
-  id: CategoryId;
+export interface CategoryText {
   label: string;
   tagline: string;
   /** How this category sounds — shown to users and screen readers. */
   timbre: string;
+}
+
+export interface Category extends CategoryText {
+  id: CategoryId;
+  /** English text (the Portuguese is in the fields above). */
+  en: CategoryText;
 }
 
 export const CATEGORIES: Category[] = [
@@ -18,26 +23,60 @@ export const CATEGORIES: Category[] = [
     label: "Atmosfera",
     tagline: "Furacões, ozono e CO₂",
     timbre: "Pads etéreos e vento filtrado",
+    en: {
+      label: "Atmosphere",
+      tagline: "Hurricanes, ozone and CO₂",
+      timbre: "Airy pads and filtered wind",
+    },
   },
   {
     id: "oceanos",
     label: "Oceanos",
     tagline: "Correntes, cor e El Niño",
     timbre: "Graves profundos e ondas que respiram",
+    en: {
+      label: "Oceans",
+      tagline: "Currents, colour and El Niño",
+      timbre: "Deep basses and breathing waves",
+    },
   },
   {
     id: "gelo",
     label: "Gelo",
     tagline: "Glaciares e mantos de gelo",
     timbre: "Sinos cristalinos e brilho agudo",
+    en: {
+      label: "Ice",
+      tagline: "Glaciers and ice sheets",
+      timbre: "Crystal bells and bright highs",
+    },
   },
   {
     id: "terra",
     label: "Terra",
     tagline: "Solo, água e luzes noturnas",
     timbre: "Cordas quentes e pulsação rítmica",
+    en: {
+      label: "Land",
+      tagline: "Soil, water and night lights",
+      timbre: "Warm strings and a rhythmic pulse",
+    },
   },
 ];
+
+/** Text of a visualization in one language. */
+export interface VizText {
+  title: string;
+  description: string;
+  meaning: string;
+  altText: string;
+  /** What you hear (phenomenon sound) and what makes it stronger. */
+  sound: string;
+  measures: string;
+  /** What the Worldview link shows. */
+  what: string;
+  timeline?: Timeline;
+}
 
 export interface Visualization {
   id: string;
@@ -47,6 +86,8 @@ export interface Visualization {
   description: string;
   /** What the changes in the video mean, in plain words (shown in "Descrição"). */
   meaning: string;
+  /** English text; the Portuguese is in the main fields. */
+  en: VizText;
   /** Longer description for screen readers. */
   altText: string;
   videoPath: string;
@@ -68,7 +109,7 @@ const v = (
   videoPath: string,
   posterPath: string,
   phenomenon: PhenomenonSpec,
-  extra: { meaning: string; worldview: WorldviewLink; timeline?: Timeline },
+  extra: { meaning: string; en: VizText; worldview: WorldviewLink; timeline?: Timeline },
 ): Visualization => ({
   id: `svs-${svsId}`,
   svsId,
@@ -102,6 +143,19 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "As cores do radar mostram onde chove com mais força: vermelho é chuva intensa. Quanto mais fechada e vermelha a espiral, mais energia o furacão tira do oceano quente — e oceanos mais quentes alimentam furacões mais fortes.",
+      en: {
+        title: "Hurricane Erin takes shape in the Atlantic",
+        description:
+          "August 2025: one of the season's strongest hurricanes spins east of Puerto Rico.",
+        meaning:
+          "The radar colours show where rain falls hardest: red is heavy rain. The tighter and redder the spiral, the more energy the hurricane draws from the warm ocean — and warmer oceans feed stronger hurricanes.",
+        altText:
+          "Satellite view of white clouds spiralling over the dark blue ocean, with the hurricane's eye clearly defined in the centre.",
+        sound: "Hurricane wind and rain",
+        measures: "clouds and heavy rain increase (red and yellow on the radar)",
+        what: "Erin's rain measured by satellite (IMERG)",
+        timeline: { from: "Aug 16 2025", to: "Aug 19 2025" },
+      },
       worldview: {
         layers: [
           "IMERG_Precipitation_Rate",
@@ -128,12 +182,24 @@ export const VISUALIZATIONS: Visualization[] = [
       metric: "ozoneHole",
       region: [0.22, 0, 0.78, 1],
       range: [0.013, 0.224],
-      sound: "Vento gelado da estratosfera",
+      sound: "Pulsos gelados da estratosfera",
       measures: "área do buraco do ozono (azul e roxo)",
     },
     {
       meaning:
         "Azul e roxo marcam onde há pouco ozono, a camada que nos protege da radiação ultravioleta. O buraco cresceu com os gases CFC e deixou de crescer depois de o Protocolo de Montreal (1987) os proibir.",
+      en: {
+        title: "The Antarctic ozone hole, 1979–2025",
+        description: "The largest extent of the ozone hole each year since 1979.",
+        meaning:
+          "Blue and purple mark where ozone is low — the layer that shields us from ultraviolet radiation. The hole grew with CFC gases and stopped growing after the Montreal Protocol (1987) banned them.",
+        altText:
+          "Globe centred on the South Pole. A blue and purple patch over Antarctica grows through the 1980s and 1990s and levels off in the following decades.",
+        sound: "Icy stratospheric pulses",
+        measures: "the ozone hole grows (blue and purple)",
+        what: "total ozone over Antarctica (OMPS)",
+        timeline: { from: "1979", to: "2025" },
+      },
       worldview: {
         layers: [
           "OMPS_Ozone_Total_Column",
@@ -165,6 +231,18 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "As plumas laranja e amarelas são CO₂ libertado sobretudo pela queima de combustíveis fósseis e por incêndios, levado pelo vento. É o principal gás que está a aquecer o planeta.",
+      en: {
+        title: "Carbon dioxide around the planet",
+        description:
+          "Global CO₂ concentration from January to March 2020, simulated at high resolution.",
+        meaning:
+          "The orange and yellow plumes are CO₂ released mostly by burning fossil fuels and by fires, carried by the wind. It is the main gas warming the planet.",
+        altText:
+          "The camera orbits the Earth as orange and yellow plumes of CO₂ spread across the northern hemisphere against a dark background.",
+        sound: "Breath of gas and smoke",
+        measures: "the CO₂ plumes get denser (orange and yellow)",
+        what: "CO₂ measured by the OCO-2 satellite",
+      },
       worldview: {
         layers: [
           "OCO-2_Carbon_Dioxide_Total_Column_Average",
@@ -189,12 +267,25 @@ export const VISUALIZATIONS: Visualization[] = [
       kind: "fogo",
       metric: "warmShare",
       range: [0.277, 0.746],
-      sound: "Crepitar do calor",
+      sound: "Batimento e crepitar do calor",
       measures: "parte quente da curva (amarelo e vermelho)",
     },
     {
       meaning:
         "Cada curva mostra quantas zonas de terra tiveram um ano mais frio (azul) ou mais quente (vermelho) do que o normal. A curva desliza para a direita: o calor que antes era raro é hoje comum.",
+      en: {
+        title: "The temperature curve shifts",
+        description:
+          "The spread of land temperature anomalies from 1964 to 2025: extreme heat becomes common.",
+        meaning:
+          "Each curve shows how many land areas had a colder (blue) or hotter (red) year than normal. The curve slides to the right: heat that used to be rare is now common.",
+        altText:
+          "A bell-shaped curve moves to the right over the decades, turning from blue to red.",
+        sound: "Heartbeat and crackle of heat",
+        measures: "more of the curve turns warm (yellow and red)",
+        what: "surface air temperature (MERRA-2)",
+        timeline: { from: "1954", to: "2025" },
+      },
       worldview: {
         layers: ["MERRA2_2m_Air_Temperature_Monthly", "Coastlines_15m"],
         date: "2025-07-01",
@@ -223,6 +314,17 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "As linhas são correntes calculadas a partir de dados reais. A Corrente do Golfo leva água quente para norte e ajuda a regular o clima da América do Norte e da Europa; os redemoinhos misturam calor e nutrientes.",
+      en: {
+        title: "Perpetual Ocean 2: the Gulf Stream",
+        description: "North Atlantic currents, down to 600 m deep, drawn as brushstrokes of light.",
+        meaning:
+          "The lines are currents computed from real data. The Gulf Stream carries warm water north and helps regulate the climate of North America and Europe; the eddies mix heat and nutrients.",
+        altText:
+          "East coast of North America; over the blue ocean, thousands of white and blue lines flow and swirl along the Gulf Stream.",
+        sound: "Running water and waves",
+        measures: "the moving currents glow brighter",
+        what: "sea temperature: the Gulf Stream (MUR)",
+      },
       worldview: {
         layers: [
           "GHRSST_L4_MUR_Sea_Surface_Temperature",
@@ -253,6 +355,18 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "Cada quadrado colorido é sargaço visto por satélite; vermelho é mais denso. Desde 2011 estas algas multiplicaram-se com mais nutrientes e água quente, e chegam em massa às praias das Caraíbas e de África.",
+      en: {
+        title: "Sargassum in the Atlantic, 2010–2023",
+        description: "July average of sargassum seaweed seen by the Terra and Aqua satellites.",
+        meaning:
+          "Each coloured square is sargassum seen from space; red is densest. Since 2011 this seaweed has multiplied with more nutrients and warm water, washing ashore in huge amounts in the Caribbean and West Africa.",
+        altText:
+          "Map of the tropical Atlantic where coloured squares of sargassum appear and multiply year after year between Africa and the Caribbean.",
+        sound: "Waves lapping the seaweed",
+        measures: "sargassum spreads at sea",
+        what: "satellite images of the tropical Atlantic (MODIS)",
+        timeline: { from: "2010", to: "2023" },
+      },
       worldview: {
         layers: ["MODIS_Aqua_CorrectedReflectance_TrueColor", "Coastlines_15m"],
         date: "2023-07-15",
@@ -281,6 +395,19 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "A cor mostra a vida no mar: verde e amarelo indicam mais fitoplâncton. Com o El Niño, a água fria e rica em nutrientes deixa de subir no Pacífico equatorial e a faixa verde enfraquece em 2026 face a 2025.",
+      en: {
+        title: "El Niño 2026 seen in the ocean's colour",
+        description:
+          "NASA's PACE mission compares the colour of the Pacific in 2025 and 2026 as El Niño develops.",
+        meaning:
+          "Colour shows life in the sea: green and yellow mean more phytoplankton. During El Niño, cold nutrient-rich water stops rising in the equatorial Pacific, and the green band fades in 2026 compared with 2025.",
+        altText:
+          "Two maps of the Pacific Ocean, one above the other, in shades of blue, green and yellow that change day by day.",
+        sound: "El Niño swell and rain",
+        measures: "the equatorial Pacific loses green in 2026 compared with 2025",
+        what: "Pacific temperature anomaly and PACE chlorophyll",
+        timeline: { from: "Mar", to: "Nov" },
+      },
       worldview: {
         layers: [
           "GHRSST_L4_MUR25_Sea_Surface_Temperature_Anomalies",
@@ -313,6 +440,19 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "As manchas laranja e vermelhas são uma floração de algas nocivas detetada pelo satélite PACE. Água mais quente favorece estas florações, que podem matar peixes e afetar a pesca.",
+      en: {
+        title: "Coastal phytoplankton blooms",
+        description:
+          "Data from the PACE mission reveal the microscopic life that paints the coasts.",
+        meaning:
+          "The orange and red patches are a harmful algal bloom detected by the PACE satellite. Warmer water favours these blooms, which can kill fish and hurt fisheries.",
+        altText:
+          "Close-up of a coastline where green and turquoise swirls of phytoplankton spread over the deep blue.",
+        sound: "Bubbles of microscopic life",
+        measures: "the algal bloom intensifies",
+        what: "chlorophyll measured by the PACE mission",
+        timeline: { from: "Mar 2025", to: "Jun 2025" },
+      },
       worldview: {
         layers: ["OCI_PACE_Chlorophyll_a", "OCI_PACE_True_Color", "Coastlines_15m"],
         date: "2025-05-05",
@@ -341,6 +481,18 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "Laranja e vermelho mostram onde o manto de gelo perdeu massa desde 2002. A Gronelândia perde em média 264 mil milhões de toneladas de gelo por ano, e essa água faz subir o nível do mar.",
+      en: {
+        title: "Greenland losing mass, 2002–2025",
+        description: "Gravity measurements from the GRACE satellites show the ice sheet shrinking.",
+        meaning:
+          "Orange and red show where the ice sheet has lost mass since 2002. Greenland loses on average 264 billion tonnes of ice a year, and that water raises sea level.",
+        altText:
+          "Greenland on a black background; its coasts turn red and dark as ice is lost over the years.",
+        sound: "Ice cracking and water dripping",
+        measures: "ice mass is lost (orange to dark red)",
+        what: "mass change measured by GRACE-FO",
+        timeline: { from: "2002", to: "2025" },
+      },
       worldview: {
         layers: [
           "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
@@ -372,6 +524,18 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "Vermelho é gelo perdido, azul é gelo ganho. As costas da Gronelândia e da Antártida Ocidental perdem gelo cada vez mais depressa — juntas, são uma das maiores causas da subida do mar.",
+      en: {
+        title: "The poles melting: Antarctica and Greenland",
+        description: "Two decades of ice mass loss at both poles, measured by GRACE and GRACE-FO.",
+        meaning:
+          "Red is ice lost, blue is ice gained. The coasts of Greenland and West Antarctica are losing ice faster and faster — together they are one of the biggest causes of sea-level rise.",
+        altText:
+          "Antarctica and Greenland side by side, their edges turning from white to deep red.",
+        sound: "Ice cracking and water dripping",
+        measures: "ice mass is lost (orange to dark red)",
+        what: "mass change measured by GRACE-FO",
+        timeline: { from: "2002", to: "2025" },
+      },
       worldview: {
         layers: [
           "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
@@ -403,6 +567,19 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "Vermelho mostra onde a superfície do gelo baixou desde 2020, medida por um laser a partir do espaço. Ano após ano, o gelo destas ilhas árticas fica mais fino.",
+      en: {
+        title: "ICESat-2: ice height changing",
+        description:
+          "ICESat-2's laser measures how the ice of Svalbard and northern Russia thinned between 2020 and 2025.",
+        meaning:
+          "Red shows where the ice surface has dropped since 2020, measured by a laser from space. Year after year, the ice on these Arctic islands gets thinner.",
+        altText:
+          "Arctic islands seen from above, covered in red patches where the ice lost height and blue where it gained.",
+        sound: "Ice cracking and water dripping",
+        measures: "the ice loses height (red)",
+        what: "Arctic ice mass loss measured by GRACE-FO",
+        timeline: { from: "2020", to: "2025" },
+      },
       worldview: {
         layers: [
           "GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI",
@@ -425,18 +602,31 @@ export const VISUALIZATIONS: Visualization[] = [
     "/vis/a010000/a015000/a015030/Mendenhall_Glacier,_Alaska_-_Web.mp4",
     "/vis/a010000/a015000/a015030/15030---Mendenhall-Glacier_print.jpg",
     {
-      kind: "degelo",
+      kind: "glaciar",
       metric: "glacierIce",
       region: [0.35, 0, 0.8, 0.75],
       range: [0.271, 0.583],
       invert: true,
       smoothing: 0.15,
-      sound: "Gelo a estalar e água a pingar",
+      sound: "Glaciar a pingar e a ranger",
       measures: "recuo do gelo do glaciar (azul-claro)",
     },
     {
       meaning:
         "Em falsa cor, o gelo aparece azul-claro e a vegetação verde. O glaciar recuou cerca de 1,6 km desde 1986 e as plantas ocupam o vale que o gelo deixou livre.",
+      en: {
+        title: "The retreat of Mendenhall Glacier, Alaska",
+        description:
+          "From 1986 to 2024 the glacier retreated about 1.6 km and lost hundreds of metres of thickness.",
+        meaning:
+          "In false colour, ice appears light blue and vegetation green. The glacier has retreated about 1.6 km since 1986 and plants are taking over the valley the ice left behind.",
+        altText:
+          "Landsat images of a valley: the light-blue tongue of ice retreats as red vegetation advances.",
+        sound: "Glacier dripping and creaking",
+        measures: "the glacier ice retreats (light blue)",
+        what: "the glacier in false colour (Landsat HLS)",
+        timeline: { from: "1986", to: "2024" },
+      },
       worldview: {
         layers: ["HLS_False_Color_Landsat", "MODIS_Terra_CorrectedReflectance_TrueColor"],
         date: "2024-08-06",
@@ -465,6 +655,19 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "Em falsa cor, as culturas aparecem vermelhas. Os círculos são campos regados com água subterrânea muito antiga: acendem-se quando as plantas crescem e apagam-se com a colheita.",
+      en: {
+        title: "Farming in the Saudi Arabian desert",
+        description:
+          "Circular fields of corn, barley, sorghum and wheat light up and fade with the harvests.",
+        meaning:
+          "In false colour, crops appear red. The circles are fields watered with very old groundwater: they light up as plants grow and fade with the harvest.",
+        altText:
+          "Brown desert dotted with green circles that appear and disappear like blinking lights.",
+        sound: "Irrigation sprinklers",
+        measures: "more fields are cultivated (red circles)",
+        what: "crop fields in false colour (Landsat HLS)",
+        timeline: { from: "Jan 2024", to: "Jan 2025" },
+      },
       worldview: {
         layers: ["HLS_False_Color_Landsat", "MODIS_Terra_CorrectedReflectance_TrueColor"],
         date: "2024-03-15",
@@ -492,6 +695,18 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "O lago está quase sempre seco. Depois de tempestades tropicais enche-se de água (verde-azulada) e volta a secar em poucos meses — a chuva extrema transforma o deserto.",
+      en: {
+        title: "The ephemeral Lake Carnegie, Australia",
+        description: "A dry bed that turns into a temporary oasis after tropical storms.",
+        meaning:
+          "The lake is almost always dry. After tropical storms it fills with water (blue-green) and dries again within months — extreme rain transforming the desert.",
+        altText:
+          "Arid brown plain where patches of dark blue water suddenly spread and then dry up.",
+        sound: "Rain and water filling the lake",
+        measures: "water fills the lake (blue-green)",
+        what: "the lake seen by satellite (Landsat HLS and MODIS)",
+        timeline: { from: "2019", to: "2021" },
+      },
       worldview: {
         layers: [
           "HLS_L30_Nadir_BRDF_Adjusted_Reflectance",
@@ -522,6 +737,17 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "Dourado mostra onde as luzes da noite ficaram mais fortes entre 2014 e 2022 (cidades novas, mais eletricidade); roxo, onde enfraqueceram (crises, conflitos ou mudança para iluminação LED).",
+      en: {
+        title: "Earth's night lights changing",
+        description: "How city lights grew or dimmed between 2014 and 2022.",
+        meaning:
+          "Gold shows where night lights got brighter between 2014 and 2022 (new cities, more electricity); purple where they dimmed (crises, conflicts or a switch to LED lighting).",
+        altText:
+          "Dark night-time globe with points of light; regions that shine brighter turn gold and those that dim turn purple.",
+        sound: "Hum and traffic of the cities",
+        measures: "the city lights shine brighter",
+        what: "night lights (VIIRS Black Marble)",
+      },
       worldview: {
         layers: ["VIIRS_SNPP_DayNightBand_At_Sensor_Radiance", "Coastlines_15m"],
         date: "2022-12-15",
@@ -550,6 +776,18 @@ export const VISUALIZATIONS: Visualization[] = [
     {
       meaning:
         "O azul escuro das albufeiras desaparece quando as barragens caem e o rio volta a correr livre. A terra exposta volta a ficar verde e os salmões podem voltar a subir o rio.",
+      en: {
+        title: "Removing the Klamath dams",
+        description: "Between 2023 and 2024 four dams came down and the river ran free again.",
+        meaning:
+          "The dark blue of the reservoirs disappears as the dams fall and the river runs free again. The exposed land turns green and salmon can swim upstream once more.",
+        altText:
+          "Valley seen from space: a blue reservoir drains and gives way to a narrow river surrounded by brown land that turns green again.",
+        sound: "River running free",
+        measures: "the reservoirs drain",
+        what: "the Klamath River seen by satellite (Landsat HLS and MODIS)",
+        timeline: { from: "Oct 2023", to: "Mar 2025" },
+      },
       worldview: {
         layers: [
           "HLS_L30_Nadir_BRDF_Adjusted_Reflectance",
@@ -563,6 +801,28 @@ export const VISUALIZATIONS: Visualization[] = [
     },
   ),
 ];
+
+export type { Lang } from "./i18n";
+import type { Lang } from "./i18n";
+
+/** Text of a visualization in the visitor's language. */
+export function vizText(v: Visualization, lang: Lang): VizText {
+  if (lang === "en") return v.en;
+  return {
+    title: v.title,
+    description: v.description,
+    meaning: v.meaning,
+    altText: v.altText,
+    sound: v.phenomenon.sound,
+    measures: v.phenomenon.measures,
+    what: v.worldview.what,
+    ...(v.timeline ? { timeline: v.timeline } : {}),
+  };
+}
+
+export function categoryText(c: Category, lang: Lang): CategoryText {
+  return lang === "en" ? c.en : c;
+}
 
 export function categoryById(id: CategoryId): Category {
   return CATEGORIES.find((c) => c.id === id)!;

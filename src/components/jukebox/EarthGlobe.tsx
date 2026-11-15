@@ -17,6 +17,8 @@ uniform float uRadius;
 uniform float uSpin;
 uniform vec3 uSun;
 uniform vec2 uSunPos;
+uniform vec2 uMoonPos;
+uniform float uMoonR;
 uniform sampler2D uDay;
 uniform sampler2D uNight;
 
@@ -52,9 +54,13 @@ void main() {
   vec3 col = vec3(0.0);
   float alpha = 0.0;
 
-  // The Sun far away, with a soft glare.
+  // The Sun on one side and the Moon on the other, with glows of similar weight so they
+  // balance each other.
   float ds = length(frag - uSunPos) / uRadius;
-  float sun = smoothstep(0.07, 0.055, ds) + 0.45 * exp(-ds * 6.0) + 0.14 * exp(-ds * 1.8);
+  float sun = smoothstep(0.07, 0.055, ds) + 0.3 * exp(-ds * 6.0) + 0.09 * exp(-ds * 1.8);
+  vec2 dmv = (frag - uMoonPos) / uMoonR;
+  float dm = length(dmv);
+  float moonGlow = 0.2 * exp(-(dm - 1.0) * uMoonR / uRadius * 5.0) + 0.07 * exp(-(dm - 1.0) * uMoonR / uRadius * 1.6);
 
   if (r < 1.0) {
     vec3 n = vec3(p, sqrt(1.0 - r * r));
@@ -99,14 +105,25 @@ void main() {
     col += vec3(0.32, 0.55, 1.0) * rim * (0.08 + 0.9 * smoothstep(-0.25, 0.5, diff));
     col *= 0.78;
     alpha = 1.0;
+  } else if (dm < 1.0) {
+    // The Moon, lit by the same Sun: its bright side faces the Sun, the rest gets a faint earthshine.
+    vec3 nm = vec3(dmv, sqrt(1.0 - dm * dm));
+    float mlit = smoothstep(-0.05, 0.2, dot(nm, L));
+    float maria = smoothstep(0.45, 0.7, fbm(nm * 2.6 + 7.0));
+    float craters = fbm(nm * 14.0);
+    float albedo = 0.82 - maria * 0.28 - craters * 0.12;
+    vec3 moonCol = vec3(0.93, 0.94, 0.98) * albedo;
+    col = moonCol * (0.06 + 0.94 * mlit * max(dot(nm, L), 0.0) * 1.2);
+    col *= smoothstep(1.0, 0.96, dm) * 0.3 + 0.7; // soft limb
+    alpha = smoothstep(1.0, 0.985, dm);
   } else {
     // Thin glowing atmosphere around the planet, brighter towards the Sun.
     float side = smoothstep(-0.4, 0.8, dot(normalize(p), normalize(L.xy)));
     float halo = exp(-(r - 1.0) * 30.0) * (0.12 + 0.75 * side);
     col = vec3(0.32, 0.55, 1.0) * halo;
     alpha = halo;
-    col += vec3(1.0, 0.96, 0.86) * sun;
-    alpha = clamp(alpha + sun, 0.0, 1.0);
+    col += vec3(1.0, 0.96, 0.86) * sun + vec3(0.8, 0.86, 1.0) * moonGlow;
+    alpha = clamp(alpha + sun + moonGlow, 0.0, 1.0);
     // The canvas is not premultiplied: store the colour, let alpha do the fading.
     col = alpha > 0.001 ? min(col / alpha, vec3(1.0)) : col;
   }
@@ -190,6 +207,8 @@ export function EarthGlobe() {
     const uSpin = u("uSpin");
     const uSun = u("uSun");
     const uSunPos = u("uSunPos");
+    const uMoonPos = u("uMoonPos");
+    const uMoonR = u("uMoonR");
     gl.uniform1i(u("uDay"), 0);
     gl.uniform1i(u("uNight"), 1);
     // Sun to the right and slightly above: day on the right, night (city lights) on the left.
@@ -211,7 +230,7 @@ export function EarthGlobe() {
       canvas.height = Math.round(h * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
       const wide = w >= 768;
-      let radius: number, cx: number, cy: number, sx: number, sy: number;
+      let radius: number, cx: number, cy: number, sx: number, sy: number, mx: number, my: number;
       // GL y goes up: a low value is low on the screen.
       // The planet sits in the centre, behind the hero text.
       if (wide) {
@@ -220,22 +239,31 @@ export function EarthGlobe() {
         cy = h * 0.47;
         sx = Math.min(w - 70, cx + radius * 1.7);
         sy = Math.min(h - 100, cy + radius * 0.85);
+        mx = Math.max(70, cx - radius * 1.7);
+        my = sy;
       } else {
         radius = Math.min(w * 0.58, h * 0.32);
         cx = w * 0.5;
         cy = h * 0.47;
-        sx = w - 30;
-        sy = Math.min(h - 140, cy + radius * 1.25);
+        // Phones: the globe fills the width, so the Sun and the Moon sit below it, one each side.
+        sx = w - 40;
+        sy = Math.max(40, cy - radius * 1.12);
+        mx = 40;
+        my = sy;
       }
       radius *= dpr;
       cx *= dpr;
       cy *= dpr;
       sx *= dpr;
       sy *= dpr;
+      mx *= dpr;
+      my *= dpr;
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform2f(uCenter, cx, cy);
       gl.uniform1f(uRadius, radius);
       gl.uniform2f(uSunPos, sx, sy);
+      gl.uniform2f(uMoonPos, mx, my);
+      gl.uniform1f(uMoonR, radius * (wide ? 0.085 : 0.07));
     };
 
     const draw = () => {
