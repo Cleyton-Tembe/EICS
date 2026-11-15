@@ -271,7 +271,7 @@ function About() {
               title="Arrasta o vídeo"
             >
               Nos vídeos que mostram uma evolução — o gelo, o ozono, as temperaturas — arrasta o
-              vídeo para os lados ou usa a linha do tempo. A música e o som do fenómeno seguem o ano
+              vídeo para os lados (ou usa as teclas ← e →). A música e o som do fenómeno seguem o ano
               que estás a ver.
             </Card>
             <Card

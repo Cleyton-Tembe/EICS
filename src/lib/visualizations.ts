@@ -604,3 +604,34 @@ export function shuffleMixed<T extends { category: string }>(
   }
   return out;
 }
+
+/**
+ * Order a visitor sees when scrolling: ice first (Greenland losing mass), then CO₂, then the
+ * most striking ones, alternating themes.
+ */
+export const FEATURED_ORDER: number[] = [
+  31156, // Gronelândia a perder massa
+  5196, // CO₂ à volta do planeta
+  5575, // Furacão Erin
+  5613, // A curva das temperaturas
+  15030, // Glaciar Mendenhall
+  31392, // Buraco do ozono
+  5687, // El Niño
+  15022, // Lago Carnegie
+  5425, // Corrente do Golfo
+  31166, // Os polos a derreter
+  15025, // Agricultura no deserto
+  5634, // Luzes noturnas
+  5298, // Sargaço
+  5591, // ICESat-2
+  15027, // Barragens do Klamath
+  5599, // Fitoplâncton
+];
+
+export function featuredOrder(items: Visualization[] = VISUALIZATIONS): Visualization[] {
+  const rank = (v: Visualization) => {
+    const i = FEATURED_ORDER.indexOf(v.svsId);
+    return i === -1 ? FEATURED_ORDER.length : i;
+  };
+  return [...items].sort((a, b) => rank(a) - rank(b));
+}

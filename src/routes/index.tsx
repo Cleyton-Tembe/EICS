@@ -6,7 +6,13 @@ import { Navbar, type Filter } from "@/components/jukebox/Navbar";
 import { Hero } from "@/components/jukebox/Hero";
 import { VideoCard } from "@/components/jukebox/VideoCard";
 import type { HudState } from "@/components/jukebox/SonificationPanel";
-import { VISUALIZATIONS, categoryById, shuffleMixed, type Visualization } from "@/lib/visualizations";
+import {
+  VISUALIZATIONS,
+  categoryById,
+  featuredOrder,
+  shuffleMixed,
+  type Visualization,
+} from "@/lib/visualizations";
 import { analyzeFrame, fallbackFeatures, mapToMusic } from "@/lib/sonification";
 import { JukeboxAudio } from "@/lib/jukebox-audio";
 import {
@@ -45,8 +51,8 @@ const SAMPLE_H = 27;
 const PANELS_KEY = "earth-jukebox:panels";
 
 function Index() {
-  // Initial order is fixed so server and browser render the same; shuffled after load.
-  const [order, setOrder] = useState<Visualization[]>(VISUALIZATIONS);
+  // Curated order (ice first, then CO₂…); the same on server and browser.
+  const [order, setOrder] = useState<Visualization[]>(() => featuredOrder());
   const [filter, setFilter] = useState<Filter>("todas");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Set<string>>(() => new Set());
@@ -61,7 +67,6 @@ function Index() {
   const videoEls = useRef(new Map<string, HTMLVideoElement>());
 
   useEffect(() => {
-    setOrder(shuffleMixed(VISUALIZATIONS));
     try {
       const saved = JSON.parse(window.localStorage.getItem(PANELS_KEY) ?? "{}") as {
         info?: boolean;

@@ -97,6 +97,7 @@ void main() {
     // Atmosphere seen at the edge of the disc.
     float rim = pow(1.0 - n.z, 2.2);
     col += vec3(0.32, 0.55, 1.0) * rim * (0.08 + 0.9 * smoothstep(-0.25, 0.5, diff));
+    col *= 0.78;
     alpha = 1.0;
   } else {
     // Thin glowing atmosphere around the planet, brighter towards the Sun.
@@ -212,19 +213,19 @@ export function EarthGlobe() {
       const wide = w >= 768;
       let radius: number, cx: number, cy: number, sx: number, sy: number;
       // GL y goes up: a low value is low on the screen.
+      // The planet sits in the centre, behind the hero text.
       if (wide) {
-        radius = Math.min(h * 0.39, w * 0.26);
-        cx = w * 0.71;
-        cy = h * 0.48;
-        sx = Math.min(w - 60, cx + radius * 1.75);
-        sy = Math.min(h - 90, cy + radius * 0.75);
-      } else {
-        // Phones: the planet rises from the bottom, under the text; the Sun is just off screen.
-        radius = Math.min(w * 0.8, h * 0.45);
+        radius = Math.min(h * 0.4, w * 0.3);
         cx = w * 0.5;
-        cy = h * 0.38 - radius;
-        sx = w + radius * 0.12;
-        sy = cy + radius * 1.05;
+        cy = h * 0.47;
+        sx = Math.min(w - 70, cx + radius * 1.7);
+        sy = Math.min(h - 100, cy + radius * 0.85);
+      } else {
+        radius = Math.min(w * 0.58, h * 0.32);
+        cx = w * 0.5;
+        cy = h * 0.47;
+        sx = w - 30;
+        sy = Math.min(h - 140, cy + radius * 1.25);
       }
       radius *= dpr;
       cx *= dpr;

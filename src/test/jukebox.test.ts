@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isAllowedSvsPath } from "@/lib/svs";
 import { analyzeFrame, mapToMusic, type FrameFeatures } from "@/lib/sonification";
-import { CATEGORIES, VISUALIZATIONS, shuffleMixed } from "@/lib/visualizations";
+import { CATEGORIES, VISUALIZATIONS, featuredOrder, shuffleMixed } from "@/lib/visualizations";
 import {
   mapPhenomenonSound,
   measurePhenomenon,
@@ -176,5 +176,15 @@ describe("timeline scrubbing", () => {
     expect(timelineLabel({ from: "2002", to: "2025" }, 0)).toBe("≈ 2002");
     expect(timelineLabel({ from: "2002", to: "2025" }, 1)).toBe("≈ 2025");
     expect(timelineLabel({ from: "mar", to: "nov" }, 0.5)).toBe("50% · mar → nov");
+  });
+});
+
+describe("featured order", () => {
+  it("starts with ice, then CO₂, and keeps every video once", () => {
+    const out = featuredOrder();
+    expect(out[0]!.category).toBe("gelo");
+    expect(out[1]!.svsId).toBe(5196);
+    expect(new Set(out.map((v) => v.id))).toEqual(new Set(VISUALIZATIONS.map((v) => v.id)));
+    expect(out.length).toBe(VISUALIZATIONS.length);
   });
 });
