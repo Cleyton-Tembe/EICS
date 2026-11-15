@@ -1,10 +1,19 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FrameFeatures, MusicState } from "@/lib/sonification";
+import { intensityLabel, type IntensityLabel } from "@/lib/phenomena";
 
 export interface HudState {
   features: FrameFeatures;
   music: MusicState;
   fallback: boolean;
+  phenomenon: {
+    /** 0..1 intensity of the phenomenon in the current frame */
+    level: number;
+    /** What you hear */
+    sound: string;
+    /** What in the image drives the level */
+    measures: string;
+  };
 }
 
 interface Props {
@@ -75,6 +84,44 @@ function Spectrum({ analyser, soundOn }: { analyser: AnalyserNode | null; soundO
   );
 }
 
+/** Phenomenon level, kept in step with the sound: low = quiet and low, high = loud and high. */
+function PhenomenonMeter({ phenomenon }: { phenomenon: HudState["phenomenon"] }) {
+  const pct = Math.round(Math.min(1, Math.max(0, phenomenon.level)) * 100);
+  const label = intensityLabel(phenomenon.level);
+  // Screen readers hear only when the intensity changes band, not every frame.
+  const [spoken, setSpoken] = useState<IntensityLabel | null>(null);
+  useEffect(() => {
+    const id = window.setTimeout(() => setSpoken(label), 1200);
+    return () => window.clearTimeout(id);
+  }, [label]);
+
+  return (
+    <div className="mt-3 rounded-lg bg-void/60 p-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-xs font-semibold text-foreground">{phenomenon.sound}</p>
+        <p className="shrink-0 whitespace-nowrap font-mono text-[0.65rem] text-muted-foreground">
+          {label} · {pct}%
+        </p>
+      </div>
+      <div
+        role="meter"
+        aria-label={`Intensidade do fenómeno: ${phenomenon.measures}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        aria-valuetext={`${label}, ${pct}%`}
+        className="meter-track mt-1.5"
+      >
+        <div className="meter-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-1 font-mono text-[0.6rem] text-muted-foreground">mede: {phenomenon.measures}</p>
+      <p aria-live="polite" className="sr-only">
+        {spoken ? `Intensidade do fenómeno ${spoken}: o som fica ${spoken === "alta" ? "forte e agudo" : spoken === "baixa" ? "suave e grave" : "moderado"}.` : ""}
+      </p>
+    </div>
+  );
+}
+
 export function SonificationPanel({ hud, soundOn, analyser }: Props) {
   const f = hud?.features;
   const m = hud?.music;
@@ -112,6 +159,8 @@ export function SonificationPanel({ hud, soundOn, analyser }: Props) {
           <p className="py-2.5 text-center font-mono text-[0.7rem] text-muted-foreground">som desligado</p>
         )}
       </div>
+
+      {hud && <PhenomenonMeter phenomenon={hud.phenomenon} />}
 
       {f && (
         <dl className="mt-3 hidden space-y-2.5 md:block">

@@ -1,10 +1,11 @@
-import { ChevronDown, Headphones, Palette, Sun, Thermometer, Activity } from "lucide-react";
+import { ChevronDown, Headphones, Palette, Sun, Thermometer, Activity, Wind } from "lucide-react";
 
 const MAPPINGS = [
   { icon: Palette, from: "Cor dominante", to: "tonalidade do acorde" },
   { icon: Thermometer, from: "Tons quentes", to: "acorde menor, tensão" },
   { icon: Sun, from: "Brilho", to: "timbre e registo" },
   { icon: Activity, from: "Detalhe e movimento", to: "ritmo das notas" },
+  { icon: Wind, from: "Intensidade do fenómeno", to: "som natural: volume e tom" },
 ];
 
 export function Hero({ onStart }: { onStart: () => void }) {
@@ -42,19 +43,15 @@ export function Hero({ onStart }: { onStart: () => void }) {
           <Headphones className="h-5 w-5" aria-hidden />
           Começar a ouvir
         </button>
-        <a href="#como-soa" className="btn-ghost-star">
-          Como soa?
-        </a>
       </div>
 
       <ul
-        id="como-soa"
         aria-label="Como as imagens viram som"
-        className="animate-float-up relative mt-10 grid w-full max-w-4xl grid-cols-2 gap-2 md:mt-16 md:grid-cols-4 md:gap-3"
+        className="animate-float-up relative mt-10 grid w-full max-w-5xl grid-cols-2 gap-2 md:mt-16 md:grid-cols-5 md:gap-3"
         style={{ animationDelay: "0.45s" }}
       >
         {MAPPINGS.map(({ icon: Icon, from, to }) => (
-          <li key={from} className="glass rounded-2xl p-3 text-left md:p-4">
+          <li key={from} className="glass rounded-2xl p-3 text-left last:col-span-2 md:p-4 md:last:col-span-1">
             <Icon className="hidden h-5 w-5 text-primary md:block" aria-hidden />
             <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground md:mt-3">
               <Icon className="h-4 w-4 shrink-0 text-primary md:hidden" aria-hidden />

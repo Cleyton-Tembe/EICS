@@ -107,6 +107,12 @@ export function VideoCard({
             <span>
               <span className="text-cat">♪</span> {cat.timbre}
             </span>
+            <span>
+              <span className="text-cat">≋</span> {viz.phenomenon.sound}
+              <span className="sr-only">
+                , que fica mais forte e agudo quanto maior for: {viz.phenomenon.measures}.
+              </span>
+            </span>
             <a
               href={`https://svs.gsfc.nasa.gov/${viz.svsId}`}
               target="_blank"
