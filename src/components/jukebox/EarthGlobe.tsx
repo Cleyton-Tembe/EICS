@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 // Rotating Earth seen from space, drawn with WebGL: NASA Blue Marble by day, Black Marble city
-// lights by night, a moving day/night line, clouds, atmosphere and the Sun in the background.
+// lights by night, a moving day/night line, clouds, atmosphere and the Moon. The Sun is not
+// drawn; only its light, coming from the right.
 // Only lives in the hero; it stops drawing when the hero is off screen or the tab is hidden.
 
 const VERT = `
@@ -16,11 +17,8 @@ uniform vec2 uCenter;
 uniform float uRadius;
 uniform float uSpin;
 uniform vec3 uSun;
-uniform vec2 uSunPos;
 uniform vec2 uMoonPos;
 uniform float uMoonR;
-uniform float uSunR;
-uniform float uTime;
 uniform sampler2D uDay;
 uniform sampler2D uNight;
 
@@ -56,19 +54,7 @@ void main() {
   vec3 col = vec3(0.0);
   float alpha = 0.0;
 
-  // The Sun on one side and the Moon on the other, with glows of similar weight so they
-  // balance each other.
-  vec2 sv = (frag - uSunPos) / uSunR; // 1.0 = edge of the solar disc
-  float ds = length(sv);
-  float sunK = uSunR / uRadius; // distances outside the disc, in Earth radii
-  float outS = max(ds - 1.0, 0.0) * sunK;
-  // Corona: a warm, soft glow hugging the disc, then a wide faint halo.
-  float corona = 0.75 * exp(-outS * 18.0) + 0.16 * exp(-outS * 4.0);
-  // Soft rays (diffraction spikes) turning very slowly.
-  float ang = atan(sv.y, sv.x) + uTime * 0.01;
-  float rays = (pow(abs(cos(ang * 2.0)), 120.0) * 0.22 + pow(abs(cos(ang * 5.0 + 0.6)), 160.0) * 0.08)
-    * exp(-outS * 3.5) * smoothstep(0.0, 0.02, outS);
-  float sun = corona + rays;
+  // The Moon, off to one side; the Sun itself is not drawn, only its light.
   vec2 dmv = (frag - uMoonPos) / uMoonR;
   float dm = length(dmv);
   float moonGlow = 0.2 * exp(-(dm - 1.0) * uMoonR / uRadius * 5.0) + 0.07 * exp(-(dm - 1.0) * uMoonR / uRadius * 1.6);
@@ -116,20 +102,6 @@ void main() {
     col += vec3(0.32, 0.55, 1.0) * rim * (0.08 + 0.9 * smoothstep(-0.25, 0.5, diff));
     col *= 0.78;
     alpha = 1.0;
-  } else if (ds < 1.0) {
-    // The Sun's disc: white-gold centre, darker orange edge (limb darkening), and a moving,
-    // grainy surface (granulation).
-    float mu = sqrt(1.0 - ds * ds);
-    vec3 centre = vec3(1.0, 0.97, 0.86);
-    vec3 limb = vec3(1.0, 0.7, 0.32);
-    vec3 c = mix(limb, centre, pow(mu, 0.55));
-    float gran = fbm(vec3(sv * 9.0, uTime * 0.25));
-    c *= 0.9 + 0.12 * gran;
-    c *= 0.8 + 0.2 * pow(mu, 0.4);
-    col = min(c * 1.08, vec3(1.0));
-    // Blend the edge into the corona so there is no dark outline.
-    col = mix(vec3(1.0, 0.82, 0.55), col, smoothstep(1.0, 0.9, ds));
-    alpha = 1.0;
   } else if (dm < 1.0) {
     // The Moon, lit by the same Sun: its bright side faces the Sun, the rest gets a faint earthshine.
     vec3 nm = vec3(dmv, sqrt(1.0 - dm * dm));
@@ -147,8 +119,8 @@ void main() {
     float halo = exp(-(r - 1.0) * 30.0) * (0.12 + 0.75 * side);
     col = vec3(0.32, 0.55, 1.0) * halo;
     alpha = halo;
-    col += vec3(1.0, 0.8, 0.5) * sun + vec3(0.8, 0.86, 1.0) * moonGlow;
-    alpha = clamp(alpha + sun + moonGlow, 0.0, 1.0);
+    col += vec3(0.8, 0.86, 1.0) * moonGlow;
+    alpha = clamp(alpha + moonGlow, 0.0, 1.0);
     // The canvas is not premultiplied: store the colour, let alpha do the fading.
     col = alpha > 0.001 ? min(col / alpha, vec3(1.0)) : col;
   }
@@ -231,11 +203,8 @@ export function EarthGlobe() {
     const uRadius = u("uRadius");
     const uSpin = u("uSpin");
     const uSun = u("uSun");
-    const uSunPos = u("uSunPos");
     const uMoonPos = u("uMoonPos");
     const uMoonR = u("uMoonR");
-    const uSunR = u("uSunR");
-    const uTime = u("uTime");
     gl.uniform1i(u("uDay"), 0);
     gl.uniform1i(u("uNight"), 1);
     // Sun to the right and slightly above: day on the right, night (city lights) on the left.
@@ -257,42 +226,33 @@ export function EarthGlobe() {
       canvas.height = Math.round(h * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
       const wide = w >= 768;
-      let radius: number, cx: number, cy: number, sx: number, sy: number, mx: number, my: number;
+      let radius: number, cx: number, cy: number, mx: number, my: number;
       // GL y goes up: a low value is low on the screen.
       // The planet sits in the centre, behind the hero text.
       if (wide) {
         radius = Math.min(h * 0.4, w * 0.3);
         cx = w * 0.5;
         cy = h * 0.47;
-        sx = Math.min(w - 70, cx + radius * 1.7);
-        sy = Math.min(h - 100, cy + radius * 0.85);
         mx = Math.max(70, cx - radius * 1.7);
-        my = sy;
+        my = Math.min(h - 100, cy + radius * 0.85);
       } else {
         radius = Math.min(w * 0.58, h * 0.32);
         cx = w * 0.5;
         cy = h * 0.47;
-        // Phones: the globe fills the width, so the Sun and the Moon sit below it, one each side.
-        sx = w - 40;
-        sy = Math.max(40, cy - radius * 1.12);
+        // Phones: the globe fills the width, so the Moon sits below it, to one side.
         mx = 40;
-        my = sy;
+        my = Math.max(40, cy - radius * 1.12);
       }
       radius *= dpr;
       cx *= dpr;
       cy *= dpr;
-      sx *= dpr;
-      sy *= dpr;
       mx *= dpr;
       my *= dpr;
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform2f(uCenter, cx, cy);
       gl.uniform1f(uRadius, radius);
-      gl.uniform2f(uSunPos, sx, sy);
       gl.uniform2f(uMoonPos, mx, my);
       gl.uniform1f(uMoonR, radius * (wide ? 0.085 : 0.07));
-      // The Sun looks about as big as the Moon in our sky.
-      gl.uniform1f(uSunR, radius * (wide ? 0.09 : 0.075));
     };
 
     const draw = () => {
@@ -301,7 +261,6 @@ export function EarthGlobe() {
       const t = (performance.now() - start) / 1000;
       const spin = spin0 + (reduce ? 0 : (t / DAY_SECONDS) * Math.PI * 2);
       gl.uniform1f(uSpin, spin);
-      gl.uniform1f(uTime, t);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

@@ -17,7 +17,7 @@ import {
 } from "@/lib/visualizations";
 import { analyzeFrame, fallbackFeatures, mapToMusic } from "@/lib/sonification";
 import { JukeboxAudio } from "@/lib/jukebox-audio";
-import { introRemainingSeconds } from "@/lib/intro-sound";
+import { fadeOutIntro } from "@/lib/intro-sound";
 import { useLang } from "@/components/jukebox/LangProvider";
 import {
   PHENOMENON_SAMPLE_H,
@@ -60,7 +60,8 @@ function Index() {
   const [filter, setFilter] = useState<Filter>("todas");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Set<string>>(() => new Set());
-  const [soundOn, setSoundOn] = useState(false);
+  // Sound is on by default.
+  const [soundOn, setSoundOn] = useState(true);
   const [hud, setHud] = useState<HudState | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [immersive, setImmersive] = useState(false);
@@ -250,15 +251,36 @@ function Index() {
   const enableSound = useCallback(async () => {
     if (!audioRef.current) audioRef.current = new JukeboxAudio();
     const audio = audioRef.current;
-    // If the welcome sound is still playing, the soundscape fades in as it ends.
-    const wait = introRemainingSeconds();
-    if (wait > 1) audio.holdFor(wait);
     if (activeViz) audio.setCategory(activeViz.category);
     audio.setActive(activeViz !== null);
     audio.setMuted(false);
     setSoundOn(true);
     await audio.resume();
   }, [activeViz]);
+
+  // Sound is on by default: start the soundscape as the page opens (it plays at once where the
+  // browser allows) and wake it on the first tap or key, which browsers require before any sound.
+  const enableSoundRef = useRef(enableSound);
+  enableSoundRef.current = enableSound;
+  const soundOnRef = useRef(soundOn);
+  soundOnRef.current = soundOn;
+  useEffect(() => {
+    const events = ["pointerdown", "keydown", "touchend"] as const;
+    const wake = () => {
+      if (soundOnRef.current) void enableSoundRef.current();
+      if (audioRef.current?.ctx.state === "running") {
+        events.forEach((e) => window.removeEventListener(e, wake, true));
+      }
+    };
+    wake();
+    events.forEach((e) => window.addEventListener(e, wake, { capture: true, passive: true }));
+    return () => events.forEach((e) => window.removeEventListener(e, wake, true));
+  }, []);
+
+  // The welcome sound belongs to the hero: leaving it for the videos fades it out.
+  useEffect(() => {
+    if (activeId !== null) fadeOutIntro();
+  }, [activeId]);
 
   const toggleSound = useCallback(() => {
     if (soundOn) {
