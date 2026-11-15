@@ -167,9 +167,10 @@ export class PhenomenonLayer {
       while (next < horizon) {
         this.play(e, Math.max(next, now));
         const period = 1 / Math.max(0.01, e.rate);
-        // Regular events (sprinklers) tick steadily; natural ones arrive at random.
+        // Regular events keep a steady rhythm (sprinklers, heartbeat, pings, drops);
+        // natural ones arrive at random.
         next += e.regular
-          ? period * rand(0.95, 1.05)
+          ? period * rand(0.99, 1.01)
           : -Math.log(1 - Math.random() * 0.999) * period;
       }
       this.nextEvent[i] = next;
@@ -280,6 +281,68 @@ export class PhenomenonLayer {
         g.gain.exponentialRampToValueAtTime(amp, t + dur * 0.5);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         this.noiseBurst(t, dur).connect(f).connect(g);
+        break;
+      }
+      case "rajada": {
+        // A gust: rises and falls with a whistling resonance, sweeping across the stereo field.
+        const dur = rand(1.4, 2.2);
+        const f = ctx.createBiquadFilter();
+        f.type = "bandpass";
+        f.Q.value = 4;
+        f.frequency.setValueAtTime(pitch * 0.6, t);
+        f.frequency.exponentialRampToValueAtTime(pitch * 1.4, t + dur * 0.45);
+        f.frequency.exponentialRampToValueAtTime(pitch * 0.7, t + dur);
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        pan.pan.setValueAtTime(-0.7 * dir, t);
+        pan.pan.linearRampToValueAtTime(0.7 * dir, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(amp, t + dur * 0.4);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        this.noiseBurst(t, dur).connect(f).connect(g);
+        break;
+      }
+      case "cristal": {
+        // Crystalline ping with a fifth above, ringing out like a sonar.
+        pan.pan.value = rand(-0.4, 0.4);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(amp, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+        for (const [ratio, k] of [
+          [1, 1],
+          [1.5, 0.35],
+          [3.01, 0.15],
+        ] as const) {
+          const o = ctx.createOscillator();
+          o.type = "sine";
+          o.frequency.value = e.pitch * ratio;
+          const og = ctx.createGain();
+          og.gain.value = k;
+          o.connect(og).connect(g);
+          o.start(t);
+          o.stop(t + 0.95);
+        }
+        break;
+      }
+      case "pulso": {
+        // Heartbeat: "lub" then a softer "dub".
+        pan.pan.value = 0;
+        for (const [dt, k] of [
+          [0, 1],
+          [0.24, 0.65],
+        ] as const) {
+          const o = ctx.createOscillator();
+          o.type = "sine";
+          const s0 = t + dt;
+          o.frequency.setValueAtTime(e.pitch * 2.2, s0);
+          o.frequency.exponentialRampToValueAtTime(e.pitch, s0 + 0.09);
+          const og = ctx.createGain();
+          og.gain.setValueAtTime(0.0001, s0);
+          og.gain.exponentialRampToValueAtTime(e.gain * k, s0 + 0.012);
+          og.gain.exponentialRampToValueAtTime(0.0001, s0 + 0.3);
+          o.connect(og).connect(pan);
+          o.start(s0);
+          o.stop(s0 + 0.32);
+        }
         break;
       }
       case "sopro":

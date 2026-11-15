@@ -9,12 +9,15 @@ import type { HudState } from "@/components/jukebox/SonificationPanel";
 import {
   VISUALIZATIONS,
   categoryById,
+  categoryText,
   featuredOrder,
+  vizText,
   shuffleMixed,
   type Visualization,
 } from "@/lib/visualizations";
 import { analyzeFrame, fallbackFeatures, mapToMusic } from "@/lib/sonification";
 import { JukeboxAudio } from "@/lib/jukebox-audio";
+import { useLang } from "@/components/jukebox/LangProvider";
 import {
   PHENOMENON_SAMPLE_H,
   PHENOMENON_SAMPLE_W,
@@ -28,16 +31,16 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Earth Jukebox — Ouve a Terra a mudar" },
+      { title: "Earth Jukebox — Hear the Earth change" },
       {
         name: "description",
         content:
-          "Visualizações da NASA sobre atmosfera, oceanos, gelo e terra transformadas em som em tempo real.",
+          "NASA visualizations of the atmosphere, oceans, ice and land turned into sound in real time.",
       },
-      { property: "og:title", content: "Earth Jukebox — Ouve a Terra a mudar" },
+      { property: "og:title", content: "Earth Jukebox — Hear the Earth change" },
       {
         property: "og:description",
-        content: "Desliza pelas visualizações da NASA e ouve cada uma a tocar a sua própria paisagem sonora.",
+        content: "Scroll through NASA visualizations and hear each one play its own soundscape.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -60,9 +63,12 @@ function Index() {
   const [hud, setHud] = useState<HudState | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [immersive, setImmersive] = useState(false);
-  // Description and live sonification start closed; the viewer's choice is remembered.
+  // Title card minimised, description and live sonification closed at first; the viewer's
+  // choice is remembered.
   const [showInfo, setShowInfo] = useState(false);
   const [showSound, setShowSound] = useState(false);
+  const [showCard, setShowCard] = useState(false);
+  const { lang, t: tr } = useLang();
   const audioRef = useRef<JukeboxAudio | null>(null);
   const videoEls = useRef(new Map<string, HTMLVideoElement>());
 
@@ -71,33 +77,40 @@ function Index() {
       const saved = JSON.parse(window.localStorage.getItem(PANELS_KEY) ?? "{}") as {
         info?: boolean;
         sound?: boolean;
+        card?: boolean;
       };
       if (saved.info) setShowInfo(true);
       if (saved.sound) setShowSound(true);
+      if (saved.card) setShowCard(true);
     } catch {
       /* storage can be blocked; panels just start closed */
     }
   }, []);
 
-  const savePanels = (info: boolean, sound: boolean) => {
+  const savePanels = (p: { info: boolean; sound: boolean; card: boolean }) => {
     try {
-      window.localStorage.setItem(PANELS_KEY, JSON.stringify({ info, sound }));
+      window.localStorage.setItem(PANELS_KEY, JSON.stringify(p));
     } catch {
       /* ignore */
     }
   };
   const toggleInfo = useCallback(() => {
-    setShowInfo((v) => {
-      savePanels(!v, showSound);
-      return !v;
-    });
-  }, [showSound]);
+    // Opening the description also opens the title card it belongs to.
+    const next = !showInfo;
+    setShowInfo(next);
+    if (next) setShowCard(true);
+    savePanels({ info: next, sound: showSound, card: next || showCard });
+  }, [showInfo, showSound, showCard]);
   const toggleSoundPanel = useCallback(() => {
-    setShowSound((v) => {
-      savePanels(showInfo, !v);
-      return !v;
-    });
-  }, [showInfo]);
+    const next = !showSound;
+    setShowSound(next);
+    savePanels({ info: showInfo, sound: next, card: showCard });
+  }, [showInfo, showSound, showCard]);
+  const toggleCard = useCallback(() => {
+    const next = !showCard;
+    setShowCard(next);
+    savePanels({ info: showInfo, sound: showSound, card: next });
+  }, [showInfo, showSound, showCard]);
 
   const list = useMemo(
     () => (filter === "todas" ? order : order.filter((v) => v.category === filter)),
@@ -139,9 +152,14 @@ function Index() {
   // Announce the playing visualization for screen readers.
   useEffect(() => {
     if (activeViz) {
-      setAnnouncement(`A tocar: ${activeViz.title}. ${categoryById(activeViz.category).label}.`);
+      setAnnouncement(
+        tr("page.playing", {
+          title: vizText(activeViz, lang).title,
+          category: categoryText(categoryById(activeViz.category), lang).label,
+        }),
+      );
     }
-  }, [activeViz]);
+  }, [activeViz, lang, tr]);
 
   // Frame analysis → music, for the active video.
   useEffect(() => {
@@ -211,7 +229,7 @@ function Index() {
           features,
           music,
           fallback,
-          phenomenon: { level, sound: spec.sound, measures: spec.measures },
+          phenomenon: { level },
         });
       }
     };
@@ -297,7 +315,9 @@ function Index() {
   }, [immersive]);
 
   useEffect(() => {
-    setAnnouncement(immersive ? "Ecrã inteiro: só o vídeo e a navegação." : "");
+    setAnnouncement(immersive ? tr("page.fullscreenOn") : "");
+    // Only when the mode changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [immersive]);
 
   // Keyboard: ↓/J next, ↑/K previous, ←/→ back and forward in time, M sound, F full screen,
@@ -307,11 +327,17 @@ function Index() {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      const sections = Array.from(document.querySelectorAll<HTMLElement>("#inicio, [data-vid], #fim"));
-      const current = sections.findIndex((s) => (s.dataset["vid"] ?? null) === activeId && s.id !== "fim");
+      const sections = Array.from(
+        document.querySelectorAll<HTMLElement>("#inicio, [data-vid], #fim"),
+      );
+      const current = sections.findIndex(
+        (s) => (s.dataset["vid"] ?? null) === activeId && s.id !== "fim",
+      );
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
-        sections[Math.min(current + 1, sections.length - 1)]?.scrollIntoView({ behavior: "smooth" });
+        sections[Math.min(current + 1, sections.length - 1)]?.scrollIntoView({
+          behavior: "smooth",
+        });
       } else if (e.key === "ArrowUp" || e.key === "k") {
         e.preventDefault();
         sections[Math.max(current - 1, 0)]?.scrollIntoView({ behavior: "smooth" });
@@ -361,7 +387,7 @@ function Index() {
           <Hero onStart={start} />
         </div>
 
-        <div id="feed" aria-label="Visualizações">
+        <div id="feed" aria-label={tr("page.feed")}>
           {list.map((viz, i) => (
             <VideoCard
               key={viz.id}
@@ -380,6 +406,8 @@ function Index() {
               showSound={showSound}
               onToggleInfo={toggleInfo}
               onToggleSound={toggleSoundPanel}
+              showCard={showCard}
+              onToggleCard={toggleCard}
             />
           ))}
         </div>
@@ -390,14 +418,21 @@ function Index() {
           aria-labelledby="fim-title"
           className="relative flex h-svh snap-start flex-col items-center justify-center px-5 text-center"
         >
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">Fim da órbita</p>
-          <h2 id="fim-title" className="mt-4 max-w-2xl font-display text-3xl font-semibold md:text-5xl">
-            Cada mudança no planeta tem <span className="text-cosmic">um som</span>.
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            {tr("end.kicker")}
+          </p>
+          <h2
+            id="fim-title"
+            className="mt-4 max-w-2xl font-display text-3xl font-semibold md:text-5xl"
+          >
+            {tr("end.title.before")}
+            <span className="text-cosmic">{tr("end.title.highlight")}</span>
+            {tr("end.title.after")}
           </h2>
           <p className="mt-4 max-w-md text-sm text-muted-foreground">
-            Queres saber como as imagens se transformam em música?{" "}
+            {tr("end.howQuestion")}{" "}
             <Link to="/sobre" className="text-primary underline-offset-4 hover:underline">
-              Lê como funciona
+              {tr("end.howLink")}
             </Link>
             .
           </p>
@@ -411,21 +446,20 @@ function Index() {
               }}
             >
               <Shuffle className="h-5 w-5" aria-hidden />
-              Baralhar e ouvir de novo
+              {tr("end.shuffle")}
             </button>
             <button
               type="button"
               className="btn-ghost-star"
-              onClick={() => document.getElementById("inicio")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() =>
+                document.getElementById("inicio")?.scrollIntoView({ behavior: "smooth" })
+              }
             >
               <ArrowUp className="h-4 w-4" aria-hidden />
-              Voltar ao início
+              {tr("end.back")}
             </button>
           </div>
-          <p className="mt-10 max-w-md text-xs text-muted-foreground">
-            Teclado: ↓ / ↑ mudar de vídeo · ← / → recuar ou avançar no tempo · I descrição · S
-            sonificação · M som · F ecrã inteiro.
-          </p>
+          <p className="mt-10 max-w-md text-xs text-muted-foreground">{tr("end.keys")}</p>
         </section>
       </main>
 

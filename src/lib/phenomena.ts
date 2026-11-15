@@ -22,6 +22,7 @@ export type SoundKind =
   | "temporal"
   | "bolhas"
   | "degelo"
+  | "glaciar"
   | "aspersores"
   | "chuva"
   | "cidade"
@@ -272,6 +273,9 @@ export type GrainKind =
   | "racha" // ice crack
   | "jato" // sprinkler spray
   | "carro" // car passing by
+  | "rajada" // gust of wind sweeping past (hurricane rain bands)
+  | "cristal" // crystalline ping, like a sonar
+  | "pulso" // heartbeat "lub-dub"
   | "sopro" // gas puff
   | "marulho"; // wave lapping
 
@@ -297,30 +301,38 @@ interface Recipe {
 
 const RECIPES: Record<SoundKind, Recipe> = {
   furacao: {
+    // Wind with a whistle, a deep roar underneath, dense rain, and gusts that come in a steady
+    // rhythm like the rain bands turning around the eye.
     bed: {
       type: "bandpass",
-      gain: [0.1, 0.6],
-      freq: [260, 1100],
-      q: [0.7, 2.4],
-      swellRate: [0.12, 0.45],
-      swellDepth: 0.55,
-      freqSwell: 0.35,
+      gain: [0.1, 0.5],
+      freq: [300, 1000],
+      q: [1, 3],
+      swellRate: [0.15, 0.5],
+      swellDepth: 0.5,
+      freqSwell: 0.4,
     },
-    rumble: { gain: [0.06, 0.45], freq: [65, 160] },
-    events: [{ grain: "pingo", rate: [3, 70], gain: [0.03, 0.09], pitch: [2400, 5000] }],
+    rumble: { gain: [0.08, 0.5], freq: [60, 150] },
+    events: [
+      { grain: "rajada", rate: [0.35, 1.3], gain: [0.12, 0.5], pitch: [350, 1200], regular: true },
+      { grain: "pingo", rate: [10, 120], gain: [0.02, 0.07], pitch: [2500, 5500] },
+    ],
   },
   estratosfera: {
+    // Thin high wind with steady crystalline pings, like a sonar: faster and higher as the hole grows.
     bed: {
       type: "bandpass",
-      gain: [0.26, 1.9],
+      gain: [0.12, 0.9],
       freq: [1300, 4200],
-      q: [2, 6],
+      q: [2, 5],
       swellRate: [0.05, 0.2],
       swellDepth: 0.5,
       freqSwell: 0.25,
     },
     rumble: { gain: [0.02, 0.08], freq: [80, 140] },
-    events: [],
+    events: [
+      { grain: "cristal", rate: [1, 4], gain: [0.05, 0.18], pitch: [1100, 2600], regular: true },
+    ],
   },
   fumo: {
     bed: {
@@ -336,17 +348,21 @@ const RECIPES: Record<SoundKind, Recipe> = {
     events: [{ grain: "sopro", rate: [0.15, 1.4], gain: [0.06, 0.25], pitch: [300, 900] }],
   },
   fogo: {
+    // A heartbeat that speeds up with the heat (a planet with a fever), under the crackle of fire.
     bed: {
       type: "lowpass",
-      gain: [0.05, 0.35],
+      gain: [0.05, 0.3],
       freq: [200, 750],
       q: [0.8, 0.8],
       swellRate: [0.2, 0.6],
       swellDepth: 0.3,
       freqSwell: 0.2,
     },
-    rumble: { gain: [0.04, 0.3], freq: [60, 120] },
-    events: [{ grain: "estalido", rate: [2, 45], gain: [0.05, 0.2], pitch: [1400, 5200] }],
+    rumble: { gain: [0.04, 0.25], freq: [60, 120] },
+    events: [
+      { grain: "pulso", rate: [0.8, 2.2], gain: [0.18, 0.55], pitch: [45, 90], regular: true },
+      { grain: "estalido", rate: [2, 40], gain: [0.05, 0.18], pitch: [1400, 5200] },
+    ],
   },
   correntes: {
     bed: {
@@ -414,6 +430,24 @@ const RECIPES: Record<SoundKind, Recipe> = {
     events: [
       { grain: "gota", rate: [0.5, 9], gain: [0.15, 0.5], pitch: [700, 2000] },
       { grain: "racha", rate: [0.05, 0.9], gain: [0.2, 0.8], pitch: [180, 520] },
+    ],
+  },
+  glaciar: {
+    // Meltwater trickling, drops falling in a steady rhythm (a melting water clock) and the
+    // glacier creaking now and then.
+    bed: {
+      type: "bandpass",
+      gain: [0.08, 0.6],
+      freq: [700, 2000],
+      q: [1, 1.8],
+      swellRate: [0.3, 0.8],
+      swellDepth: 0.4,
+      freqSwell: 0.25,
+    },
+    rumble: { gain: [0.03, 0.15], freq: [45, 80] },
+    events: [
+      { grain: "gota", rate: [1.2, 4], gain: [0.14, 0.45], pitch: [600, 1500], regular: true },
+      { grain: "racha", rate: [0.05, 0.6], gain: [0.2, 0.7], pitch: [150, 420] },
     ],
   },
   aspersores: {
