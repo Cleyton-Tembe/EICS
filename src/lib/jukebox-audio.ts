@@ -2,6 +2,8 @@
 // click handler (browsers only allow audio after a user gesture).
 import type { CategoryId } from "./visualizations";
 import { midiToFreq, type MusicState } from "./sonification";
+import type { PhenomenonSound } from "./phenomena";
+import { PhenomenonLayer } from "./phenomenon-audio";
 
 type PluckKind = "sine" | "triangle" | "bell";
 
@@ -36,6 +38,7 @@ export class JukeboxAudio {
   private lfo: OscillatorNode;
   private lfoGain: GainNode;
   private reverbSend: GainNode;
+  private phenomenon: PhenomenonLayer;
   private voice: Voice = VOICES.atmosfera;
   private music: MusicState | null = null;
   private nextNoteTime = 0;
@@ -110,6 +113,15 @@ export class JukeboxAudio {
     this.lfo.connect(this.lfoGain).connect(this.noiseGain.gain);
     this.lfo.start();
 
+    // Natural sound of the phenomenon (wind, rain, ice…), on its own bus next to the music.
+    const phenBus = ctx.createGain();
+    phenBus.gain.value = 0.9;
+    const phenVerb = ctx.createGain();
+    phenVerb.gain.value = 0.35;
+    phenBus.connect(this.master);
+    phenBus.connect(phenVerb).connect(this.reverbSend);
+    this.phenomenon = new PhenomenonLayer(ctx, phenBus);
+
     this.setCategory("atmosfera");
   }
 
@@ -178,7 +190,17 @@ export class JukeboxAudio {
     this.lfoGain.gain.setTargetAtTime(noiseBase * this.voice.lfoDepth, t, 0.5);
   }
 
+  /** Sound of the phenomenon for the current frame; `null` silences it. */
+  updatePhenomenon(sound: PhenomenonSound | null) {
+    this.phenomenon.update(sound);
+  }
+
   private schedule() {
+    if (!this.active || this.muted) {
+      this.phenomenon.resetClock(this.ctx.currentTime);
+    } else {
+      this.phenomenon.schedule(this.ctx.currentTime, this.ctx.currentTime + 0.12);
+    }
     const m = this.music;
     if (!m || !this.active || this.muted) {
       this.nextNoteTime = this.ctx.currentTime + 0.05;

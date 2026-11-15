@@ -33,3 +33,4 @@ use the editor.
 
 - NASA SVS videos are streamed through `/api/public/svs` (allow-listed `/vis/...mp4` paths only) so the browser can read frames same-origin; never point `<video>` straight at svs.gsfc.nasa.gov, since its CORS blocks pixel reads.
 - Frame→music mapping lives in pure functions (`src/lib/sonification.ts`) with tests; the Web Audio synth (`src/lib/jukebox-audio.ts`) only renders a `MusicState`, so mapping changes never touch audio code.
+- Each visualization also has a phenomenon sound (wind, rain, ice…). Frame→phenomenon level→sound mapping lives in `src/lib/phenomena.ts` (ranges calibrated on the real SVS videos at 128×72); `src/lib/phenomenon-audio.ts` only renders a `PhenomenonSound`. The level must keep driving volume and pitch together: low phenomenon = quiet, low sound; high = loud, high sound.

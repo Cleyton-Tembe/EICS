@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { isAllowedSvsPath } from "@/lib/svs";
 import { analyzeFrame, mapToMusic, type FrameFeatures } from "@/lib/sonification";
 import { CATEGORIES, VISUALIZATIONS, shuffleMixed } from "@/lib/visualizations";
+import {
+  mapPhenomenonSound,
+  measurePhenomenon,
+  phenomenonLevel,
+  smoothLevel,
+} from "@/lib/phenomena";
 
 const base: FrameFeatures = {
   brightness: 0.4,
@@ -79,5 +85,59 @@ describe("music mapping", () => {
   });
   it("ice sits higher than ocean", () => {
     expect(mapToMusic(base, "gelo").chord[0]!).toBeGreaterThan(mapToMusic(base, "oceanos").chord[0]!);
+  });
+});
+
+describe("phenomenon level follows the data in the frame", () => {
+  it("more red (ice mass lost) means a higher ice-loss level", () => {
+    const spec = { metric: "iceLoss" as const, range: [0, 1] as [number, number] };
+    const white = measurePhenomenon(solidFrame(245, 245, 245), 4, 4, spec);
+    const red = measurePhenomenon(solidFrame(150, 20, 20), 4, 4, spec);
+    expect(red).toBeGreaterThan(white);
+    expect(phenomenonLevel(red, spec)).toBe(1);
+    expect(phenomenonLevel(white, spec)).toBe(0);
+  });
+  it("purple reads as ozone hole, green does not", () => {
+    const spec = { metric: "ozoneHole" as const };
+    expect(measurePhenomenon(solidFrame(110, 40, 200), 4, 4, spec)).toBe(1);
+    expect(measurePhenomenon(solidFrame(40, 180, 60), 4, 4, spec)).toBe(0);
+  });
+  it("calibrated range is clamped and can be inverted", () => {
+    expect(phenomenonLevel(0.5, { range: [0, 1] })).toBe(0.5);
+    expect(phenomenonLevel(-3, { range: [0, 1] })).toBe(0);
+    expect(phenomenonLevel(9, { range: [0, 1] })).toBe(1);
+    expect(phenomenonLevel(0.2, { range: [0, 1], invert: true })).toBeCloseTo(0.8);
+  });
+  it("smoothing moves towards the new frame without jumping", () => {
+    expect(smoothLevel(null, 0.7)).toBe(0.7);
+    const s = smoothLevel(0, 1, 0.25);
+    expect(s).toBeGreaterThan(0);
+    expect(s).toBeLessThan(1);
+  });
+  it("every visualization has a calibrated phenomenon", () => {
+    for (const v of VISUALIZATIONS) {
+      expect(v.phenomenon.range[1]).toBeGreaterThan(v.phenomenon.range[0]);
+      expect(v.phenomenon.sound.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("phenomenon sound is in sync with the level", () => {
+  const kinds = [...new Set(VISUALIZATIONS.map((v) => v.phenomenon.kind))];
+  it.each(kinds)("%s: low level = quiet and low, high level = loud and high", (kind) => {
+    const low = mapPhenomenonSound(kind, 0.1);
+    const high = mapPhenomenonSound(kind, 0.9);
+    expect(high.bed.gain).toBeGreaterThan(low.bed.gain);
+    expect(high.bed.freq).toBeGreaterThan(low.bed.freq);
+    high.events.forEach((e, i) => {
+      expect(e.rate).toBeGreaterThan(low.events[i]!.rate);
+      expect(e.pitch).toBeGreaterThan(low.events[i]!.pitch);
+      expect(e.gain).toBeGreaterThan(low.events[i]!.gain);
+    });
+  });
+  it("hurricane is wind with rain, not the accompaniment", () => {
+    const s = mapPhenomenonSound("furacao", 0.8);
+    expect(s.bed.swellDepth).toBeGreaterThan(0.3); // gusts
+    expect(s.events.map((e) => e.grain)).toContain("pingo"); // rain
   });
 });

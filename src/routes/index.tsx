@@ -9,6 +9,15 @@ import type { HudState } from "@/components/jukebox/SonificationPanel";
 import { VISUALIZATIONS, categoryById, shuffleMixed, type Visualization } from "@/lib/visualizations";
 import { analyzeFrame, fallbackFeatures, mapToMusic } from "@/lib/sonification";
 import { JukeboxAudio } from "@/lib/jukebox-audio";
+import {
+  PHENOMENON_SAMPLE_H,
+  PHENOMENON_SAMPLE_W,
+  fallbackLevel,
+  mapPhenomenonSound,
+  measurePhenomenon,
+  phenomenonLevel,
+  smoothLevel,
+} from "@/lib/phenomena";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -99,16 +108,25 @@ function Index() {
     setHud(null);
     const audio = audioRef.current;
     if (!activeViz) {
+      audio?.updatePhenomenon(null);
       audio?.setActive(false);
       return;
     }
     audio?.setCategory(activeViz.category);
+    audio?.updatePhenomenon(null);
     audio?.setActive(true);
 
     const canvas = document.createElement("canvas");
     canvas.width = SAMPLE_W;
     canvas.height = SAMPLE_H;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    // Larger sample for the phenomenon: small features (city lights, algal blooms) vanish at 48×27.
+    const pCanvas = document.createElement("canvas");
+    pCanvas.width = PHENOMENON_SAMPLE_W;
+    pCanvas.height = PHENOMENON_SAMPLE_H;
+    const pCtx = pCanvas.getContext("2d", { willReadFrequently: true });
+    const spec = activeViz.phenomenon;
+    let level: number | null = null;
     let prev: Float32Array | null = null;
     let raf = 0;
     let last = 0;
@@ -121,26 +139,40 @@ function Index() {
       last = t;
       const v = videoEls.current.get(activeViz.id);
       let features;
+      let target: number;
       let fallback = false;
-      if (v && ctx && v.readyState >= 2) {
+      if (v && ctx && pCtx && v.readyState >= 2) {
         try {
           ctx.drawImage(v, 0, 0, SAMPLE_W, SAMPLE_H);
           const img = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H);
           const r = analyzeFrame(img.data, SAMPLE_W, SAMPLE_H, prev);
           prev = r.lum;
           features = r.features;
+          pCtx.drawImage(v, 0, 0, PHENOMENON_SAMPLE_W, PHENOMENON_SAMPLE_H);
+          const pImg = pCtx.getImageData(0, 0, PHENOMENON_SAMPLE_W, PHENOMENON_SAMPLE_H);
+          const raw = measurePhenomenon(pImg.data, PHENOMENON_SAMPLE_W, PHENOMENON_SAMPLE_H, spec);
+          target = phenomenonLevel(raw, spec);
         } catch {
           fallback = true;
           features = fallbackFeatures((t - started) / 1000, activeViz.svsId % 97);
+          target = fallbackLevel((t - started) / 1000);
         }
       } else {
         return;
       }
       const music = mapToMusic(features, activeViz.category);
       audioRef.current?.update(music);
+      level = smoothLevel(level, target, spec.smoothing);
+      const sound = mapPhenomenonSound(spec.kind, level);
+      audioRef.current?.updatePhenomenon(sound);
       if (t - lastHud > 250) {
         lastHud = t;
-        setHud({ features, music, fallback });
+        setHud({
+          features,
+          music,
+          fallback,
+          phenomenon: { level, sound: spec.sound, measures: spec.measures },
+        });
       }
     };
     raf = requestAnimationFrame(tick);
