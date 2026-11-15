@@ -17,6 +17,7 @@ import {
 } from "@/lib/visualizations";
 import { analyzeFrame, fallbackFeatures, mapToMusic } from "@/lib/sonification";
 import { JukeboxAudio } from "@/lib/jukebox-audio";
+import { introRemainingSeconds } from "@/lib/intro-sound";
 import { useLang } from "@/components/jukebox/LangProvider";
 import {
   PHENOMENON_SAMPLE_H,
@@ -249,6 +250,9 @@ function Index() {
   const enableSound = useCallback(async () => {
     if (!audioRef.current) audioRef.current = new JukeboxAudio();
     const audio = audioRef.current;
+    // If the welcome sound is still playing, the soundscape fades in as it ends.
+    const wait = introRemainingSeconds();
+    if (wait > 1) audio.holdFor(wait);
     if (activeViz) audio.setCategory(activeViz.category);
     audio.setActive(activeViz !== null);
     audio.setMuted(false);

@@ -18,10 +18,42 @@ interface Voice {
 }
 
 const VOICES: Record<CategoryId, Voice> = {
-  atmosfera: { pad: "sine", pluck: "sine", noiseFreq: 1400, noiseQ: 0.6, lfoRate: 0.07, lfoDepth: 0.5, pulse: false },
-  oceanos: { pad: "triangle", pluck: "sine", noiseFreq: 450, noiseQ: 0.5, lfoRate: 0.11, lfoDepth: 1, pulse: false },
-  gelo: { pad: "sine", pluck: "bell", noiseFreq: 7000, noiseQ: 1.8, lfoRate: 0.3, lfoDepth: 0.25, pulse: false },
-  terra: { pad: "sawtooth", pluck: "triangle", noiseFreq: 260, noiseQ: 0.9, lfoRate: 0.45, lfoDepth: 0.3, pulse: true },
+  atmosfera: {
+    pad: "sine",
+    pluck: "sine",
+    noiseFreq: 1400,
+    noiseQ: 0.6,
+    lfoRate: 0.07,
+    lfoDepth: 0.5,
+    pulse: false,
+  },
+  oceanos: {
+    pad: "triangle",
+    pluck: "sine",
+    noiseFreq: 450,
+    noiseQ: 0.5,
+    lfoRate: 0.11,
+    lfoDepth: 1,
+    pulse: false,
+  },
+  gelo: {
+    pad: "sine",
+    pluck: "bell",
+    noiseFreq: 7000,
+    noiseQ: 1.8,
+    lfoRate: 0.3,
+    lfoDepth: 0.25,
+    pulse: false,
+  },
+  terra: {
+    pad: "sawtooth",
+    pluck: "triangle",
+    noiseFreq: 260,
+    noiseQ: 0.9,
+    lfoRate: 0.45,
+    lfoDepth: 0.3,
+    pulse: true,
+  },
 };
 
 export class JukeboxAudio {
@@ -46,10 +78,12 @@ export class JukeboxAudio {
   private timer: number | null = null;
   private active = false;
   private muted = false;
+  private holdUntil = 0;
 
   constructor() {
     const Ctx: typeof AudioContext =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     this.ctx = ctx;
 
@@ -171,15 +205,32 @@ export class JukeboxAudio {
     this.applyMaster();
   }
 
+  /** Keep the soundscape silent for `seconds` (e.g. while the welcome sound finishes). */
+  holdFor(seconds: number) {
+    this.holdUntil = this.ctx.currentTime + seconds;
+    this.applyMaster();
+  }
+
   private applyMaster() {
     const target = this.active && !this.muted ? 0.7 : 0;
-    this.master.gain.setTargetAtTime(target, this.ctx.currentTime, 0.4);
+    const now = this.ctx.currentTime;
+    const g = this.master.gain;
+    if (target > 0 && this.holdUntil > now) {
+      // Fade in slowly as the welcome sound ends.
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(g.value, now);
+      g.setTargetAtTime(0, now, 0.2);
+      g.setTargetAtTime(target, this.holdUntil - 1.5, 0.9);
+      return;
+    }
+    g.setTargetAtTime(target, now, 0.4);
   }
 
   update(music: MusicState) {
     this.music = music;
     const t = this.ctx.currentTime;
-    const notes = music.chord.length >= 4 ? music.chord : [...music.chord, (music.chord[0] ?? 48) - 12];
+    const notes =
+      music.chord.length >= 4 ? music.chord : [...music.chord, (music.chord[0] ?? 48) - 12];
     this.padOscs.forEach((o, i) => o.frequency.setTargetAtTime(midiToFreq(notes[i] ?? 48), t, 0.6));
     const padScale = this.voice.pad === "sawtooth" ? 0.35 : 1;
     this.padGain.gain.setTargetAtTime(music.padLevel * padScale, t, 0.5);

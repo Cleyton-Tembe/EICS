@@ -1,6 +1,6 @@
 // Welcome sound played when the site opens: a slow, airy chord that swells in, a few bell notes
-// rising like stars appearing, and a last high note left hanging — an open question that invites
-// the visitor to scroll on. About 9 seconds, synthesized with Web Audio (browser only).
+// rising like stars appearing, a question left hanging and asked again higher — curiosity that
+// leads into the phenomenon sounds. About 10 seconds, synthesized with Web Audio (browser only).
 //
 // Browsers only let a page make sound after the visitor interacts with it (a tap, click or key),
 // so `armIntroSound` tries straight away and otherwise waits for that first gesture.
@@ -11,6 +11,7 @@ const midi = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 const PAD = [50, 57, 64, 66, 73]; // D3 A3 E4 F♯4 C♯5
 const BELLS = [69, 73, 76, 78, 81]; // A4 C♯5 E5 F♯5 A5
 const QUESTION = 80; // G♯5 — the raised 4th, left unresolved
+const ANSWER = [76, 73, 69]; // E5 C♯5 A4
 
 function impulse(ctx: BaseAudioContext, seconds: number) {
   const len = Math.floor(ctx.sampleRate * seconds);
@@ -53,12 +54,13 @@ export function scheduleIntro(
   filter.Q.value = 0.7;
   filter.frequency.setValueAtTime(300, at);
   filter.frequency.exponentialRampToValueAtTime(2600, at + 3.5);
-  filter.frequency.exponentialRampToValueAtTime(700, at + 8.5);
+  filter.frequency.exponentialRampToValueAtTime(1500, at + 7);
+  filter.frequency.exponentialRampToValueAtTime(600, at + 10);
   const pad = ctx.createGain();
   pad.gain.setValueAtTime(0.0001, at);
   pad.gain.exponentialRampToValueAtTime(0.16, at + 2.6);
-  pad.gain.setValueAtTime(0.16, at + 5);
-  pad.gain.exponentialRampToValueAtTime(0.0001, at + 9);
+  pad.gain.setValueAtTime(0.16, at + 6.5);
+  pad.gain.exponentialRampToValueAtTime(0.0001, at + 10);
   filter.connect(pad).connect(master);
   for (const n of PAD) {
     for (const det of [-7, 7]) {
@@ -70,7 +72,7 @@ export function scheduleIntro(
       g.gain.value = 0.12;
       o.connect(g).connect(filter);
       o.start(at);
-      o.stop(at + 9.2);
+      o.stop(at + 10.2);
     }
   }
 
@@ -81,10 +83,11 @@ export function scheduleIntro(
   const subG = ctx.createGain();
   subG.gain.setValueAtTime(0.0001, at);
   subG.gain.exponentialRampToValueAtTime(0.22, at + 3);
-  subG.gain.exponentialRampToValueAtTime(0.0001, at + 8.5);
+  subG.gain.setValueAtTime(0.22, at + 6);
+  subG.gain.exponentialRampToValueAtTime(0.0001, at + 9.8);
   sub.connect(subG).connect(master);
   sub.start(at);
-  sub.stop(at + 8.7);
+  sub.stop(at + 10);
 
   // 3. Bells rising like stars appearing, then a last high note left hanging.
   const bell = (t: number, m: number, amp: number) => {
@@ -115,6 +118,10 @@ export function scheduleIntro(
   };
   BELLS.forEach((m, i) => bell(at + 1.3 + i * 0.42, m, 0.11 - i * 0.01));
   bell(at + 4.1, QUESTION, 0.09);
+  // An answer that does not resolve: a few notes drift down, then the question returns an
+  // octave higher and is left hanging as the phenomenon sounds take over.
+  ANSWER.forEach((m, i) => bell(at + 5.6 + i * 0.5, m, 0.08 - i * 0.012));
+  bell(at + 7.9, QUESTION + 12, 0.07);
 
   // 4. A faint breath of "solar wind" to finish.
   const len = Math.floor(ctx.sampleRate * 3);
@@ -135,10 +142,17 @@ export function scheduleIntro(
   noise.connect(bp).connect(ng).connect(master);
   noise.start(at + 3.5);
 
-  return at + 9.5;
+  return at + 10.2;
 }
 
 export const INTRO_PLAYED_KEY = "earth-jukebox:intro-played";
+
+let introEndsAt = 0; // performance.now() when the intro finishes
+
+/** Seconds of welcome sound still to play (0 if none is playing). */
+export function introRemainingSeconds(): number {
+  return Math.max(0, (introEndsAt - performance.now()) / 1000);
+}
 
 /**
  * Plays the intro when the site opens, on the visitor's first visit only. It never waits for a
@@ -164,6 +178,7 @@ export function playIntroOnArrival(): () => void {
   const start = () => {
     if (ctx.state !== "running" || closeTimer) return;
     const end = scheduleIntro(ctx, ctx.destination);
+    introEndsAt = performance.now() + (end - ctx.currentTime) * 1000;
     try {
       window.localStorage.setItem(INTRO_PLAYED_KEY, "1");
     } catch {

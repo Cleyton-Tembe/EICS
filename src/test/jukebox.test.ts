@@ -180,10 +180,10 @@ describe("timeline scrubbing", () => {
 });
 
 describe("featured order", () => {
-  it("starts with ice, then CO₂, and keeps every video once", () => {
+  it("starts with CO₂, ends with Greenland, and keeps every video once", () => {
     const out = featuredOrder();
-    expect(out[0]!.category).toBe("gelo");
-    expect(out[1]!.svsId).toBe(5196);
+    expect(out[0]!.svsId).toBe(5196);
+    expect(out[out.length - 1]!.svsId).toBe(31156);
     expect(new Set(out.map((v) => v.id))).toEqual(new Set(VISUALIZATIONS.map((v) => v.id)));
     expect(out.length).toBe(VISUALIZATIONS.length);
   });

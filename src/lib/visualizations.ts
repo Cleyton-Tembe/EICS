@@ -866,11 +866,10 @@ export function shuffleMixed<T extends { category: string }>(
 }
 
 /**
- * Order a visitor sees when scrolling: ice first (Greenland losing mass), then CO₂, then the
- * most striking ones, alternating themes.
+ * Order a visitor sees when scrolling: CO₂ first, then the most striking ones alternating
+ * themes, and Greenland losing mass last.
  */
 export const FEATURED_ORDER: number[] = [
-  31156, // Gronelândia a perder massa
   5196, // CO₂ à volta do planeta
   5575, // Furacão Erin
   5613, // A curva das temperaturas
@@ -886,6 +885,7 @@ export const FEATURED_ORDER: number[] = [
   5591, // ICESat-2
   15027, // Barragens do Klamath
   5599, // Fitoplâncton
+  31156, // Gronelândia a perder massa (last)
 ];
 
 export function featuredOrder(items: Visualization[] = VISUALIZATIONS): Visualization[] {
