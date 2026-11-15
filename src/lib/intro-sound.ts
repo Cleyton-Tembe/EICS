@@ -1,6 +1,7 @@
 // Welcome sound played when the site opens: a slow, airy chord that swells in, a few bell notes
 // rising like stars appearing, a question left hanging and asked again higher — curiosity that
 // leads into the phenomenon sounds. About 10 seconds, synthesized with Web Audio (browser only).
+// It only plays in the hero: leaving the hero fades it out.
 //
 // Browsers only let a page make sound after the visitor interacts with it (a tap, click or key),
 // so `armIntroSound` tries straight away and otherwise waits for that first gesture.
@@ -147,11 +148,16 @@ export function scheduleIntro(
 
 export const INTRO_PLAYED_KEY = "earth-jukebox:intro-played";
 
-let introEndsAt = 0; // performance.now() when the intro finishes
+// Output of the welcome sound while it plays, so it can be faded out when the visitor leaves
+// the hero: the welcome sound belongs to the hero only.
+let introOut: { ctx: AudioContext; gain: GainNode } | null = null;
 
-/** Seconds of welcome sound still to play (0 if none is playing). */
-export function introRemainingSeconds(): number {
-  return Math.max(0, (introEndsAt - performance.now()) / 1000);
+/** Fades the welcome sound out (e.g. when the visitor scrolls from the hero to the videos). */
+export function fadeOutIntro(seconds = 0.6) {
+  if (!introOut || introOut.ctx.state !== "running") return;
+  const { ctx, gain } = introOut;
+  gain.gain.cancelScheduledValues(ctx.currentTime);
+  gain.gain.setTargetAtTime(0, ctx.currentTime, seconds / 3);
 }
 
 /**
@@ -173,12 +179,15 @@ export function playIntroOnArrival(): () => void {
   const ctx = new Ctx();
   let closeTimer = 0;
   const finish = () => {
+    if (introOut?.ctx === ctx) introOut = null;
     if (ctx.state !== "closed") void ctx.close();
   };
   const start = () => {
     if (ctx.state !== "running" || closeTimer) return;
-    const end = scheduleIntro(ctx, ctx.destination);
-    introEndsAt = performance.now() + (end - ctx.currentTime) * 1000;
+    const out = ctx.createGain();
+    out.connect(ctx.destination);
+    introOut = { ctx, gain: out };
+    const end = scheduleIntro(ctx, out);
     try {
       window.localStorage.setItem(INTRO_PLAYED_KEY, "1");
     } catch {

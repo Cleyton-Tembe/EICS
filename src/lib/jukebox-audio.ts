@@ -78,7 +78,6 @@ export class JukeboxAudio {
   private timer: number | null = null;
   private active = false;
   private muted = false;
-  private holdUntil = 0;
 
   constructor() {
     const Ctx: typeof AudioContext =
@@ -205,25 +204,9 @@ export class JukeboxAudio {
     this.applyMaster();
   }
 
-  /** Keep the soundscape silent for `seconds` (e.g. while the welcome sound finishes). */
-  holdFor(seconds: number) {
-    this.holdUntil = this.ctx.currentTime + seconds;
-    this.applyMaster();
-  }
-
   private applyMaster() {
     const target = this.active && !this.muted ? 0.7 : 0;
-    const now = this.ctx.currentTime;
-    const g = this.master.gain;
-    if (target > 0 && this.holdUntil > now) {
-      // Fade in slowly as the welcome sound ends.
-      g.cancelScheduledValues(now);
-      g.setValueAtTime(g.value, now);
-      g.setTargetAtTime(0, now, 0.2);
-      g.setTargetAtTime(target, this.holdUntil - 1.5, 0.9);
-      return;
-    }
-    g.setTargetAtTime(target, now, 0.4);
+    this.master.gain.setTargetAtTime(target, this.ctx.currentTime, 0.4);
   }
 
   update(music: MusicState) {
