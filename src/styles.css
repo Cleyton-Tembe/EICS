@@ -9,8 +9,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Earth Jukebox design system — deep space.
- * Black/navy void, electric blue, nebula violet and star white.
+ * Earth Jukebox design system — deep space in NASA colours.
+ * Solid colours only (no gradients): space black, NASA blue #0B3D91, NASA red #FC3D21 and
+ * star white. Lighter tints of NASA blue are used where text or icons must read on black.
  */
 
 @theme inline {
@@ -70,59 +71,43 @@
 :root {
   --radius: 0.875rem;
 
-  --void: oklch(0.09 0.02 275);
-  --background: oklch(0.12 0.03 278);
-  --foreground: oklch(0.97 0.01 270);
-  --star: oklch(0.99 0.005 260);
+  /* NASA brand colours */
+  --nasa-blue: #0b3d91;
+  --nasa-red: #fc3d21;
 
-  --card: oklch(0.17 0.04 278);
-  --card-foreground: oklch(0.97 0.01 270);
-  --popover: oklch(0.17 0.04 278);
-  --popover-foreground: oklch(0.97 0.01 270);
-  --glass: oklch(0.16 0.04 278 / 0.62);
+  --void: #03050a;
+  --background: #070a12;
+  --foreground: #f4f6fa;
+  --star: #f4f6fa;
 
-  --primary: oklch(0.7 0.16 250);
-  --primary-foreground: oklch(0.12 0.03 278);
-  --secondary: oklch(0.23 0.05 282);
-  --secondary-foreground: oklch(0.95 0.01 270);
-  --muted: oklch(0.21 0.04 280);
-  --muted-foreground: oklch(0.74 0.03 270);
-  --accent: oklch(0.64 0.21 300);
-  --accent-foreground: oklch(0.98 0.005 270);
-  --destructive: oklch(0.64 0.21 25);
-  --destructive-foreground: oklch(0.98 0.005 270);
-  --border: oklch(0.97 0.01 270 / 0.12);
-  --input: oklch(0.97 0.01 270 / 0.16);
-  --ring: oklch(0.7 0.16 250);
+  --card: #0b0f1a;
+  --card-foreground: #f4f6fa;
+  --popover: #0b0f1a;
+  --popover-foreground: #f4f6fa;
+  --glass: rgb(7 10 18 / 0.8);
 
-  /* Category colours: all within the space palette */
-  --cat-atmosfera: oklch(0.8 0.11 220);
-  --cat-oceanos: oklch(0.62 0.19 258);
-  --cat-gelo: oklch(0.95 0.03 230);
-  --cat-terra: oklch(0.68 0.2 302);
+  /* NASA blue, lightened so it reads on black (icons, links, focus, meters). */
+  --primary: #5b8def;
+  --primary-foreground: #ffffff;
+  --secondary: #121a2b;
+  --secondary-foreground: #f4f6fa;
+  --muted: #121a2b;
+  --muted-foreground: #a9b3c6;
+  --accent: var(--nasa-red);
+  --accent-foreground: #ffffff;
+  --destructive: var(--nasa-red);
+  --destructive-foreground: #ffffff;
+  --border: rgb(244 246 250 / 0.12);
+  --input: rgb(244 246 250 / 0.16);
+  --ring: #5b8def;
 
-  --gradient-nebula:
-    radial-gradient(60% 50% at 15% 20%, oklch(0.45 0.2 300 / 0.35), transparent 70%),
-    radial-gradient(50% 45% at 85% 30%, oklch(0.5 0.18 255 / 0.3), transparent 70%),
-    radial-gradient(70% 60% at 50% 110%, oklch(0.35 0.15 280 / 0.45), transparent 70%);
-  --gradient-title: linear-gradient(
-    100deg,
-    var(--star) 10%,
-    oklch(0.8 0.12 240) 45%,
-    oklch(0.72 0.19 300) 85%
-  );
-  --gradient-cta: linear-gradient(120deg, var(--primary), var(--accent));
-  --gradient-scrim: linear-gradient(
-    to top,
-    oklch(0.09 0.02 275 / 0.95) 0%,
-    oklch(0.09 0.02 275 / 0.55) 35%,
-    transparent 70%
-  );
-  --gradient-scrim-top: linear-gradient(to bottom, oklch(0.09 0.02 275 / 0.85), transparent);
+  /* Category colours */
+  --cat-atmosfera: #8db4f2;
+  --cat-oceanos: #4f86e6;
+  --cat-gelo: #e4ecf7;
+  --cat-terra: #ff6a50;
 
-  --shadow-glow: 0 0 40px -6px color-mix(in oklab, var(--primary) 60%, transparent);
-  --shadow-glow-accent: 0 0 50px -8px color-mix(in oklab, var(--accent) 70%, transparent);
-  --shadow-panel: 0 24px 60px -20px oklch(0.05 0.02 275 / 0.9);
+  --shadow-panel: 0 24px 60px -20px rgb(0 0 0 / 0.9);
 
   --chart-1: var(--primary);
   --chart-2: var(--accent);
@@ -176,20 +161,14 @@
 }
 
 @layer components {
-  .bg-nebula {
-    background-image: var(--gradient-nebula);
-  }
-  .bg-scrim {
-    background-image: var(--gradient-scrim);
-  }
   .bg-scrim-top {
-    background-image: var(--gradient-scrim-top);
+    background-color: rgb(3 5 10 / 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
   }
   .text-cosmic {
-    background-image: var(--gradient-title);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
+    color: var(--primary);
   }
   .glass {
     background-color: var(--glass);
@@ -208,16 +187,15 @@
     border-radius: 999px;
     padding: 0.9rem 1.6rem;
     font-weight: 700;
-    color: var(--accent-foreground);
-    background-image: var(--gradient-cta);
-    box-shadow: var(--shadow-glow-accent);
+    color: #ffffff;
+    background-color: var(--nasa-red);
     transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease;
+      transform 0.2s ease,
+      background-color 0.2s ease;
   }
   .btn-cosmic:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-glow-accent), var(--shadow-glow);
+    transform: translateY(-1px);
+    background-color: #e3321a;
   }
 
   .btn-ghost-star {
@@ -229,11 +207,36 @@
     font-weight: 600;
     color: var(--foreground);
     border: 1px solid var(--border);
-    background-color: oklch(0.97 0.01 270 / 0.04);
+    background-color: rgb(244 246 250 / 0.04);
     transition: background-color 0.2s ease;
   }
   .btn-ghost-star:hover {
-    background-color: oklch(0.97 0.01 270 / 0.1);
+    background-color: rgb(244 246 250 / 0.1);
+  }
+
+  /* Small toggle buttons under each video (Descrição, Sonificação, Worldview). */
+  .btn-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    background-color: rgb(7 10 18 / 0.7);
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .btn-chip:hover {
+    border-color: var(--primary);
+  }
+  .btn-chip[aria-expanded="true"],
+  .btn-chip[aria-pressed="true"] {
+    background-color: var(--nasa-blue);
+    border-color: var(--nasa-blue);
   }
 
   .chip-category {
@@ -254,7 +257,7 @@
   }
   .chip-category:hover {
     color: var(--foreground);
-    background-color: oklch(0.97 0.01 270 / 0.06);
+    background-color: rgb(244 246 250 / 0.06);
   }
   .chip-category[data-active="true"] {
     color: var(--foreground);
@@ -293,13 +296,13 @@
   .meter-track {
     height: 0.35rem;
     border-radius: 999px;
-    background-color: oklch(0.97 0.01 270 / 0.1);
+    background-color: rgb(244 246 250 / 0.1);
     overflow: hidden;
   }
   .meter-fill {
     height: 100%;
     border-radius: 999px;
-    background-image: linear-gradient(90deg, var(--primary), var(--accent));
+    background-color: var(--primary);
     transition: width 0.3s ease;
   }
 
@@ -313,14 +316,12 @@
   .timeline-range::-webkit-slider-runnable-track {
     height: 0.35rem;
     border-radius: 999px;
-    background-image: linear-gradient(90deg, var(--primary), var(--accent));
-    opacity: 0.85;
+    background-color: rgb(244 246 250 / 0.28);
   }
   .timeline-range::-moz-range-track {
     height: 0.35rem;
     border-radius: 999px;
-    background-image: linear-gradient(90deg, var(--primary), var(--accent));
-    opacity: 0.85;
+    background-color: rgb(244 246 250 / 0.28);
   }
   .timeline-range::-webkit-slider-thumb {
     appearance: none;
@@ -330,7 +331,7 @@
     border-radius: 999px;
     background: var(--foreground);
     border: 3px solid var(--cat, var(--primary));
-    box-shadow: 0 0 0 4px oklch(0 0 0 / 0.35);
+    box-shadow: 0 0 0 4px rgb(0 0 0 / 0.35);
   }
   .timeline-range::-moz-range-thumb {
     width: 0.8rem;
@@ -405,24 +406,4 @@
 }
 @utility animate-scroll-hint {
   animation: scroll-hint 2s ease-in-out infinite;
-}
-
-@layer components {
-  .planet-horizon {
-    position: absolute;
-    left: 50%;
-    width: 160vw;
-    height: 160vw;
-    bottom: calc(-160vw + max(9vw, 90px));
-    transform: translateX(-50%);
-    border-radius: 50%;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at 50% 0%, color-mix(in oklab, var(--primary) 30%, transparent), transparent 22%),
-      var(--void);
-    box-shadow:
-      0 -10px 80px -10px color-mix(in oklab, var(--primary) 55%, transparent),
-      0 -30px 140px -20px color-mix(in oklab, var(--accent) 35%, transparent),
-      inset 0 2px 0 color-mix(in oklab, var(--cat-gelo) 55%, transparent);
-  }
 }

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Shuffle, ArrowUp } from "lucide-react";
 import { Starfield } from "@/components/jukebox/Starfield";
@@ -42,6 +42,7 @@ export const Route = createFileRoute("/")({
 
 const SAMPLE_W = 48;
 const SAMPLE_H = 27;
+const PANELS_KEY = "earth-jukebox:panels";
 
 function Index() {
   // Initial order is fixed so server and browser render the same; shuffled after load.
@@ -53,12 +54,45 @@ function Index() {
   const [hud, setHud] = useState<HudState | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [immersive, setImmersive] = useState(false);
+  // Description and live sonification start closed; the viewer's choice is remembered.
+  const [showInfo, setShowInfo] = useState(false);
+  const [showSound, setShowSound] = useState(false);
   const audioRef = useRef<JukeboxAudio | null>(null);
   const videoEls = useRef(new Map<string, HTMLVideoElement>());
 
   useEffect(() => {
     setOrder(shuffleMixed(VISUALIZATIONS));
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(PANELS_KEY) ?? "{}") as {
+        info?: boolean;
+        sound?: boolean;
+      };
+      if (saved.info) setShowInfo(true);
+      if (saved.sound) setShowSound(true);
+    } catch {
+      /* storage can be blocked; panels just start closed */
+    }
   }, []);
+
+  const savePanels = (info: boolean, sound: boolean) => {
+    try {
+      window.localStorage.setItem(PANELS_KEY, JSON.stringify({ info, sound }));
+    } catch {
+      /* ignore */
+    }
+  };
+  const toggleInfo = useCallback(() => {
+    setShowInfo((v) => {
+      savePanels(!v, showSound);
+      return !v;
+    });
+  }, [showSound]);
+  const toggleSoundPanel = useCallback(() => {
+    setShowSound((v) => {
+      savePanels(showInfo, !v);
+      return !v;
+    });
+  }, [showInfo]);
 
   const list = useMemo(
     () => (filter === "todas" ? order : order.filter((v) => v.category === filter)),
@@ -261,7 +295,8 @@ function Index() {
     setAnnouncement(immersive ? "Ecrã inteiro: só o vídeo e a navegação." : "");
   }, [immersive]);
 
-  // Keyboard: ↓/J next, ↑/K previous, ←/→ back and forward in time, M sound, F full screen.
+  // Keyboard: ↓/J next, ↑/K previous, ←/→ back and forward in time, M sound, F full screen,
+  // I description, S live sonification.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -279,6 +314,10 @@ function Index() {
         toggleSound();
       } else if (e.key === "f") {
         toggleImmersive();
+      } else if (e.key === "i" && activeViz) {
+        toggleInfo();
+      } else if (e.key === "s" && activeViz) {
+        toggleSoundPanel();
       } else if (e.key === "Escape" && immersive && !document.fullscreenElement) {
         setImmersive(false);
       } else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && activeViz?.timeline) {
@@ -291,7 +330,7 @@ function Index() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeId, activeViz, immersive, toggleSound, toggleImmersive]);
+  }, [activeId, activeViz, immersive, toggleSound, toggleImmersive, toggleInfo, toggleSoundPanel]);
 
   const registerVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
     if (el) videoEls.current.set(id, el);
@@ -332,6 +371,10 @@ function Index() {
               onEnableSound={() => void enableSound()}
               registerVideo={registerVideo}
               immersive={immersive}
+              showInfo={showInfo}
+              showSound={showSound}
+              onToggleInfo={toggleInfo}
+              onToggleSound={toggleSoundPanel}
             />
           ))}
         </div>
@@ -346,6 +389,13 @@ function Index() {
           <h2 id="fim-title" className="mt-4 max-w-2xl font-display text-3xl font-semibold md:text-5xl">
             Cada mudança no planeta tem <span className="text-cosmic">um som</span>.
           </h2>
+          <p className="mt-4 max-w-md text-sm text-muted-foreground">
+            Queres saber como as imagens se transformam em música?{" "}
+            <Link to="/sobre" className="text-primary underline-offset-4 hover:underline">
+              Lê como funciona
+            </Link>
+            .
+          </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <button
               type="button"
@@ -368,8 +418,8 @@ function Index() {
             </button>
           </div>
           <p className="mt-10 max-w-md text-xs text-muted-foreground">
-            Teclado: ↓ / ↑ para mudar de vídeo · ← / → para recuar ou avançar no tempo · M para ligar ou
-            desligar o som · F para ecrã inteiro.
+            Teclado: ↓ / ↑ mudar de vídeo · ← / → recuar ou avançar no tempo · I descrição · S
+            sonificação · M som · F ecrã inteiro.
           </p>
         </section>
       </main>

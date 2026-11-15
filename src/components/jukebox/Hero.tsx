@@ -1,68 +1,47 @@
-import { ChevronDown, Headphones, Palette, Sun, Thermometer, Activity, Wind } from "lucide-react";
-
-const MAPPINGS = [
-  { icon: Palette, from: "Cor dominante", to: "tonalidade do acorde" },
-  { icon: Thermometer, from: "Tons quentes", to: "acorde menor, tensão" },
-  { icon: Sun, from: "Brilho", to: "timbre e registo" },
-  { icon: Activity, from: "Detalhe e movimento", to: "ritmo das notas" },
-  { icon: Wind, from: "Intensidade do fenómeno", to: "som natural: volume e tom" },
-];
+import { ChevronDown, Headphones } from "lucide-react";
+import { EarthGlobe } from "./EarthGlobe";
 
 export function Hero({ onStart }: { onStart: () => void }) {
   return (
     <section
       id="inicio"
       aria-labelledby="hero-title"
-      className="relative flex min-h-svh snap-start flex-col items-center justify-center overflow-hidden px-5 pb-14 pt-28 text-center md:pb-16 md:pt-32"
+      className="relative h-svh snap-start overflow-hidden"
     >
-      <div aria-hidden className="planet-horizon" />
+      <EarthGlobe />
 
-      <p className="animate-float-up font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
-        Dados do NASA Earth Information Center
-      </p>
-      <h1
-        id="hero-title"
-        className="animate-float-up mt-5 max-w-4xl font-display text-[2.6rem] font-bold md:mt-6 md:text-7xl leading-[1.02] tracking-tight"
-        style={{ animationDelay: "0.1s" }}
-      >
-        Ouve a <span className="text-cosmic">Terra</span> a mudar.
-      </h1>
-      <p
-        className="animate-float-up mt-5 max-w-xl text-[0.95rem] md:mt-6 md:text-lg text-muted-foreground"
-        style={{ animationDelay: "0.2s" }}
-      >
-        Visualizações reais da NASA transformadas em som, ao vivo. Desliza e cada vídeo começa a tocar a
-        sua própria paisagem sonora.
-      </p>
-
-      <div
-        className="animate-float-up mt-8 flex md:mt-10 flex-wrap items-center justify-center gap-3"
-        style={{ animationDelay: "0.3s" }}
-      >
-        <button type="button" onClick={onStart} className="btn-cosmic">
-          <Headphones className="h-5 w-5" aria-hidden />
-          Começar a ouvir
-        </button>
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-start px-5 pt-36 md:justify-center md:px-8 md:pt-16">
+        <div className="max-w-xl">
+          <p className="animate-float-up font-mono text-[0.7rem] uppercase tracking-[0.3em] text-muted-foreground">
+            NASA Earth Information Center
+          </p>
+          <h1
+            id="hero-title"
+            className="animate-float-up mt-4 font-display text-[2.5rem] font-bold leading-[1.02] tracking-tight md:text-7xl"
+            style={{ animationDelay: "0.1s" }}
+          >
+            Ouve a <span className="text-cosmic">Terra</span> a mudar.
+          </h1>
+          <p
+            className="animate-float-up mt-4 max-w-md text-[0.95rem] text-muted-foreground md:mt-6 md:text-lg"
+            style={{ animationDelay: "0.2s" }}
+          >
+            16 vídeos reais da NASA — furacões, gelo, oceanos, cidades — tocados como som enquanto
+            os vês.
+          </p>
+          <div className="animate-float-up mt-7 md:mt-9" style={{ animationDelay: "0.3s" }}>
+            <button type="button" onClick={onStart} className="btn-cosmic">
+              <Headphones className="h-5 w-5" aria-hidden />
+              Começar a ouvir
+            </button>
+          </div>
+        </div>
       </div>
 
-      <ul
-        aria-label="Como as imagens viram som"
-        className="animate-float-up relative mt-10 grid w-full max-w-5xl grid-cols-2 gap-2 md:mt-16 md:grid-cols-5 md:gap-3"
-        style={{ animationDelay: "0.45s" }}
-      >
-        {MAPPINGS.map(({ icon: Icon, from, to }) => (
-          <li key={from} className="glass rounded-2xl p-3 text-left last:col-span-2 md:p-4 md:last:col-span-1">
-            <Icon className="hidden h-5 w-5 text-primary md:block" aria-hidden />
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground md:mt-3">
-              <Icon className="h-4 w-4 shrink-0 text-primary md:hidden" aria-hidden />
-              {from}
-            </p>
-            <p className="mt-0.5 font-mono text-xs text-muted-foreground">→ {to}</p>
-          </li>
-        ))}
-      </ul>
-
-      <ChevronDown aria-hidden className="animate-scroll-hint absolute bottom-6 h-6 w-6 text-muted-foreground" />
+      <ChevronDown
+        aria-hidden
+        className="animate-scroll-hint absolute bottom-6 left-1/2 z-10 h-6 w-6 -translate-x-1/2 text-muted-foreground"
+      />
     </section>
   );
 }
