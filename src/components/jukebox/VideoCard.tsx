@@ -127,65 +127,201 @@ export function VideoCard({
 
   const infoId = `descricao-${viz.id}`;
   const soundPanelId = `sonificacao-${viz.id}`;
-  const panelsVisible = isActive && !immersive;
   const level = hud?.phenomenon.level ?? 0;
 
   return (
     <section
       data-vid={viz.id}
       aria-label={`${index + 1} de ${total}: ${viz.title}. Categoria ${cat.label}.`}
-      className={`cat-${viz.category} relative flex h-svh snap-start flex-col overflow-hidden pt-28 md:pt-16`}
+      className={`cat-${viz.category} relative h-svh snap-start overflow-hidden`}
     >
-      <div className="relative flex min-h-0 flex-1 flex-col md:flex-row">
-        <div
-          className={`relative min-h-0 flex-1 ${canScrub ? (scrubbing ? "cursor-grabbing" : "cursor-grab") : ""}`}
-          style={canScrub ? { touchAction: "pan-y" } : undefined}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-        >
-          <video
-            ref={(el) => {
-              videoRef.current = el;
-              registerVideo(viz.id, el);
-            }}
-            src={shouldLoad ? svsVideoProxyUrl(viz.videoPath) : undefined}
-            poster={viz.poster}
-            muted
-            loop
-            playsInline
-            preload={isActive ? "auto" : "metadata"}
-            aria-label={viz.altText}
-            onWaiting={() => setBuffering(true)}
-            onPlaying={() => setBuffering(false)}
-            onTimeUpdate={(e) => {
-              const v = e.currentTarget;
-              if (!drag.current && Number.isFinite(v.duration) && v.duration > 0) {
-                setProgress(v.currentTime / v.duration);
-              }
-            }}
-            className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
-          />
-          {scrubbing && timeline && (
+      <img
+        src={viz.poster}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl"
+      />
+
+      <div
+        className={`absolute inset-x-0 ${
+          immersive
+            ? "bottom-0 top-28 md:top-16"
+            : "top-28 h-[44svh] md:inset-0 md:top-16 md:h-auto"
+        } ${canScrub ? (scrubbing ? "cursor-grabbing" : "cursor-grab") : ""}`}
+        style={canScrub ? { touchAction: "pan-y" } : undefined}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        <video
+          ref={(el) => {
+            videoRef.current = el;
+            registerVideo(viz.id, el);
+          }}
+          src={shouldLoad ? svsVideoProxyUrl(viz.videoPath) : undefined}
+          poster={viz.poster}
+          muted
+          loop
+          playsInline
+          preload={isActive ? "auto" : "metadata"}
+          aria-label={viz.altText}
+          onWaiting={() => setBuffering(true)}
+          onPlaying={() => setBuffering(false)}
+          onTimeUpdate={(e) => {
+            const v = e.currentTarget;
+            if (!drag.current && Number.isFinite(v.duration) && v.duration > 0) {
+              setProgress(v.currentTime / v.duration);
+            }
+          }}
+          className="pointer-events-none h-full w-full select-none object-contain"
+        />
+        {scrubbing && timeline && (
+          <div
+            aria-hidden
+            className="glass pointer-events-none absolute left-1/2 top-6 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 font-mono text-sm text-foreground"
+          >
+            <MoveHorizontal className="h-4 w-4 text-primary" />
+            {timelineLabel(timeline, progress)}
+          </div>
+        )}
+      </div>
+
+      {isActive && buffering && !immersive && (
+        <div className="glass absolute left-1/2 top-1/3 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 text-xs text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />A receber dados da
+          NASA…
+        </div>
+      )}
+
+      <div
+        hidden={immersive}
+        className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto flex max-w-7xl flex-col gap-4 px-5 pb-6 md:flex-row md:items-end md:justify-between md:gap-10 md:px-8 md:pb-10"
+      >
+        <div className="pointer-events-auto max-w-2xl">
+          {/* Short description, opened on demand. */}
+          {isActive && showInfo && (
             <div
-              aria-hidden
-              className="glass pointer-events-none absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 font-mono text-sm text-foreground"
+              id={infoId}
+              className="glass mb-4 max-h-[24svh] overflow-y-auto rounded-2xl p-4 [text-shadow:none] md:max-h-none"
             >
-              <MoveHorizontal className="h-4 w-4 text-primary" />
-              {timelineLabel(timeline, progress)}
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+                  O que significam as mudanças
+                </h3>
+                <button
+                  type="button"
+                  onClick={onToggleInfo}
+                  aria-label="Fechar descrição"
+                  className="-mr-1 -mt-1 rounded-full p-1 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+              <p className="mt-1.5 text-sm leading-relaxed text-foreground">{viz.meaning}</p>
+              <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+                <span className="text-cat">≋</span> Som:{" "}
+                <span className="text-foreground">{viz.phenomenon.sound}</span> — mais forte e agudo
+                quanto maior for {viz.phenomenon.measures}.
+              </p>
             </div>
           )}
-          {isActive && buffering && !immersive && (
-            <div className="glass absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full px-4 py-2 text-xs text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden />A receber dados da NASA…
+
+          {/* Solid translucent card (no gradient) keeps the text readable over any frame. */}
+          <div className="text-legible md:rounded-2xl md:border md:border-border md:bg-void/65 md:p-5 md:backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cat bg-cat-soft px-3 py-1 text-xs font-semibold text-foreground">
+                <CategoryIcon id={viz.category} className="h-3.5 w-3.5 text-cat" />
+                {cat.label}
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+              </span>
             </div>
-          )}
+            <h2 className="mt-3 font-display text-2xl font-semibold leading-tight tracking-tight text-foreground md:text-4xl">
+              {viz.title}
+            </h2>
+            <p className="mt-2 line-clamp-2 text-sm text-muted-foreground md:line-clamp-none md:text-base">
+              {viz.description}
+            </p>
+            <p className="sr-only">
+              {viz.meaning} Descrição visual: {viz.altText}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 [text-shadow:none]">
+              {isActive && !soundOn && (
+                <button
+                  type="button"
+                  onClick={onEnableSound}
+                  className="btn-cosmic px-4 py-2 text-sm"
+                >
+                  <Headphones className="h-4 w-4" aria-hidden />
+                  Ouvir
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-chip"
+                aria-expanded={showInfo}
+                aria-controls={infoId}
+                onClick={onToggleInfo}
+                title="Descrição (I)"
+              >
+                <Info className="h-4 w-4" aria-hidden />
+                Descrição
+              </button>
+              <button
+                type="button"
+                className="btn-chip"
+                aria-expanded={showSound}
+                aria-controls={soundPanelId}
+                onClick={onToggleSound}
+                title="Sonificação (S)"
+              >
+                {/* Tiny live bars: there is live data inside, and how strong the phenomenon is now. */}
+                <span aria-hidden className="flex h-3.5 items-end gap-[2px]">
+                  {[0.55, 1, 0.75].map((k, i) => (
+                    <span
+                      key={i}
+                      className="w-[3px] rounded-sm bg-accent transition-[height] duration-300"
+                      style={{
+                        height: `${Math.max(18, (isActive && soundOn ? level : 0.15) * k * 100)}%`,
+                      }}
+                    />
+                  ))}
+                </span>
+                Sonificação
+              </button>
+              <a
+                href={worldviewUrl(viz.worldview)}
+                target="_blank"
+                rel="noreferrer"
+                title={`Explorar no NASA Worldview: ${viz.worldview.what}`}
+                aria-label={`Ver no NASA Worldview: ${viz.worldview.what} (abre num novo separador)`}
+                className="btn-chip"
+              >
+                <Globe2 className="h-4 w-4 text-primary" aria-hidden />
+                <span className="hidden sm:inline">Worldview</span>
+                <ExternalLink className="h-3 w-3 text-muted-foreground" aria-hidden />
+              </a>
+              <a
+                href={`https://svs.gsfc.nasa.gov/${viz.svsId}`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Página original na NASA SVS, número ${viz.svsId} (abre num novo separador)`}
+                className="hidden items-center gap-1 px-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline md:inline-flex"
+              >
+                NASA SVS #{viz.svsId}
+                <ExternalLink className="h-3 w-3" aria-hidden />
+              </a>
+            </div>
+          </div>
         </div>
 
-        {/* Live sonification: opened on demand, beside the video (below it on phones). */}
-        {panelsVisible && showSound && (
-          <div className="max-h-[30svh] shrink-0 overflow-y-auto px-4 pt-3 md:max-h-none md:w-80 md:py-4 md:pl-0 md:pr-6">
+        {/* Live sonification, opened on demand (bottom right, as before). */}
+        {isActive && showSound && (
+          <div className="pointer-events-auto max-h-[28svh] shrink-0 overflow-y-auto md:max-h-none md:w-72">
             <SonificationPanel
               id={soundPanelId}
               hud={hud}
@@ -193,147 +329,6 @@ export function VideoCard({
               analyser={analyser}
               onClose={onToggleSound}
             />
-          </div>
-        )}
-      </div>
-
-      {/* Short description: opened on demand, between the video and the controls. */}
-      {panelsVisible && showInfo && (
-        <div id={infoId} className="mx-auto w-full max-w-7xl shrink-0 px-4 pt-3 md:px-8">
-          <div className="glass max-h-[26svh] overflow-y-auto rounded-2xl p-4 md:max-h-none md:p-5">
-            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:gap-8">
-              <div>
-                <h3 className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-                  O que estás a ver
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground">{viz.description}</p>
-              </div>
-              <div>
-                <h3 className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
-                  O que significam as mudanças
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground">{viz.meaning}</p>
-              </div>
-              <button
-                type="button"
-                onClick={onToggleInfo}
-                aria-label="Fechar descrição"
-                className="hidden self-start rounded-full p-1 text-muted-foreground hover:text-foreground md:block"
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
-            <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
-              <span className="text-cat">≋</span> Som: <span className="text-foreground">{viz.phenomenon.sound}</span>{" "}
-              — mais forte e agudo quanto maior for {viz.phenomenon.measures}.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div hidden={immersive} className="mx-auto w-full max-w-7xl shrink-0 px-4 pb-4 pt-3 md:px-8 md:pb-6">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-cat px-2.5 py-0.5 text-[0.7rem] font-semibold text-foreground">
-            <CategoryIcon id={viz.category} className="h-3 w-3 text-cat" />
-            {cat.label}
-          </span>
-          <span className="font-mono text-[0.7rem] text-muted-foreground">
-            {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-          </span>
-        </div>
-        <h2 className="mt-1.5 line-clamp-2 font-display text-lg font-semibold leading-tight tracking-tight text-foreground md:text-2xl">
-          {viz.title}
-        </h2>
-        <p className="sr-only">
-          {viz.description} {viz.meaning} Descrição visual: {viz.altText}
-        </p>
-
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          {isActive && !soundOn && (
-            <button type="button" onClick={onEnableSound} className="btn-cosmic px-4 py-2 text-sm">
-              <Headphones className="h-4 w-4" aria-hidden />
-              Ouvir
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-chip"
-            aria-expanded={showInfo}
-            aria-controls={infoId}
-            onClick={onToggleInfo}
-            title="Descrição (I)"
-          >
-            <Info className="h-4 w-4" aria-hidden />
-            Descrição
-          </button>
-          <button
-            type="button"
-            className="btn-chip"
-            aria-expanded={showSound}
-            aria-controls={soundPanelId}
-            onClick={onToggleSound}
-            title="Sonificação (S)"
-          >
-            {/* Tiny live bars: the panel has live data, and how strong the phenomenon is now. */}
-            <span aria-hidden className="flex h-3.5 items-end gap-[2px]">
-              {[0.55, 1, 0.75].map((k, i) => (
-                <span
-                  key={i}
-                  className="w-[3px] rounded-sm bg-accent transition-[height] duration-300"
-                  style={{ height: `${Math.max(18, (isActive && soundOn ? level : 0.15) * k * 100)}%` }}
-                />
-              ))}
-            </span>
-            Sonificação
-          </button>
-          <a
-            href={worldviewUrl(viz.worldview)}
-            target="_blank"
-            rel="noreferrer"
-            title={`Explorar no NASA Worldview: ${viz.worldview.what}`}
-            aria-label={`Ver no NASA Worldview: ${viz.worldview.what} (abre num novo separador)`}
-            className="btn-chip"
-          >
-            <Globe2 className="h-4 w-4 text-primary" aria-hidden />
-            <span className="hidden sm:inline">Worldview</span>
-            <ExternalLink className="h-3 w-3 text-muted-foreground" aria-hidden />
-          </a>
-        </div>
-
-        {timeline && isActive && (
-          <div className="mt-3 flex max-w-xl items-center gap-3">
-            <label htmlFor={`linha-${viz.id}`} className="sr-only">
-              Linha do tempo: arrasta para avançar ou recuar a evolução e o som
-            </label>
-            <span aria-hidden className="shrink-0 font-mono text-[0.65rem] text-muted-foreground">
-              {timeline.from}
-            </span>
-            <input
-              id={`linha-${viz.id}`}
-              type="range"
-              min={0}
-              max={1000}
-              step={1}
-              value={Math.round(progress * 1000)}
-              disabled={!shouldLoad}
-              aria-valuetext={`${timelineLabel(timeline, progress)}, entre ${timeline.from} e ${timeline.to}`}
-              onPointerDown={() => {
-                videoRef.current?.pause();
-                setScrubbing(true);
-              }}
-              onPointerUp={() => {
-                setScrubbing(false);
-                resume();
-              }}
-              onChange={(e) => requestSeek(Number(e.target.value) / 1000)}
-              className="timeline-range min-w-0 flex-1"
-            />
-            <span aria-hidden className="shrink-0 font-mono text-[0.65rem] text-muted-foreground">
-              {timeline.to}
-            </span>
-            <span className="hidden shrink-0 font-mono text-xs text-foreground sm:inline">
-              {timelineLabel(timeline, progress)}
-            </span>
           </div>
         )}
       </div>
